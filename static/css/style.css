@@ -10,9 +10,7 @@ body{
   font-size: 30px ;
   padding: 20px;
 }
-.first{
-  padding-left:41%;
-}
+
 .contacts i:hover {
   color: #ff7878
 }
@@ -22,6 +20,7 @@ body{
 #headerwrap {
   background: url(/static/img/coor1.jpg) no-repeat center top;
   padding-top: 300px;
+  margin-top:60px;
   text-align: center;
   background-attachment: relative;
   background-position: center center;
@@ -42,4 +41,27 @@ body{
   font-weight: 150;
   letter-spacing: 3px;
 
+}
+#dg {
+  background: #e0e0e0;
+  padding-bottom: 70px;
+  text-align: center;
+}
+
+#dg h4 {
+  font-size: 40px;
+}
+.tilt {
+  transition: all 1s ease;
+}
+
+.tilt:hover {
+  transform: rotate(-10deg);
+}
+.last{
+  background: #2d2d2d;
+}
+.last h1{
+  color:white;
+  font-size: 20px;
 }
