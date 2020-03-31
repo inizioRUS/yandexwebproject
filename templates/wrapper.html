@@ -19,15 +19,21 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a href="/"><img src="/static/img/logo1.png" alt="здесь должна была быть картинка, но не нашлась" ,
+            <a href="/"><img src="/static/img/logo1.png"
+                             alt="здесь должна была быть картинка, но не нашлась" ,
                              height=60", width="100"></a>
         </div>
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav navbar-right">
-                <li><a href="#">Регестрация</a></li>
-                <li><a href="#">Войти</a></li>
-                <li><a href="/about_us">О нас</a></li>
-                <li><a href="/list_bot">Список ботов</a></li>
+                {% if current_user.is_authenticated %}
+                <li><a href="/list_bot">{{data[lang]['parea']}}</a></li>
+                <li><a href="/logout">{{data[lang]['exi']}}</a></li>
+                {% else %}
+                <li><a href="/register">{{data[lang]['reg']}}</a></li>
+                <li><a href="/login">{{data[lang]['ent']}}</a></li>
+                {% endif %}
+                <li><a href="/about_us">{{data[lang]['abo']}}</a></li>
+                <li><a href="/list_bot">{{data[lang]['libot']}}</a></li>
             </ul>
         </div>
     </div>
@@ -40,6 +46,12 @@
              height="30" , width="100">
         <a href="#"><i class="fa fa-instagram"></i></a>
         <a href="https://vk.com/public193402549"><i class="fa fa fa-vk"></i></a>
+        <a href="/en"><img src="/static/img/en.jpg"
+             alt="здесь должна была быть картинка, но не нашлась" ,
+             height=20", width="33" style="float:right; margin-top:25px;"></a>
+        <a href="/ru"><img src="/static/img/ru.png"
+             alt="здесь должна была быть картинка, но не нашлась" ,
+             height=20", width="33" style="margin-right:50px;float:right;margin-top:25px;"></a>
     </div>
 </div>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>

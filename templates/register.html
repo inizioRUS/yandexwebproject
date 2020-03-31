@@ -1,0 +1,67 @@
+{% extends "wrapper.html" %}
+{% block content %}
+<div class="reg">
+    <form action="" method="post" class="login" style="padding-top:10%;padding-bottom:10% ; background: #e0e0e0;    text-align: center;">
+        <h1>Регистрация</h1>
+        {{ form.hidden_tag() }}
+        {{ form.csrf_token }}
+        <p>
+            {{ form.Email.label }}<br>
+            {{ form.Email(class="form-control" , type="email") }}<br>
+            {% for error in form.Email.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+        {% endfor %}
+        </p>
+        <p>
+            {{ form.Password.label }}<br>
+            {{ form.Password(class="form-control", type="password") }}<br>
+            {% for error in form.Password.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+        {% endfor %}
+        </p>
+        <p>
+            {{ form.Password_again.label }}<br>
+            {{ form.Password_again(class="form-control", type="password") }}<br>
+            {% for error in form.Password_again.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+        {% endfor %}
+        </p>
+        <p>
+            {{ form.Surname.label }}<br>
+            {{ form.Surname(class="form-control") }}<br>
+            {% for error in form.Surname.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+        {% endfor %}
+        </p>
+        <p>
+            {{ form.Name.label }}<br>
+            {{ form.Name(class="form-control") }}<br>
+            {% for error in form.Name.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+        {% endfor %}
+        </p>
+        <p>
+            {{ form.Age.label }}<br>
+            {{ form.Age(class="form-control") }}<br>
+            {% for error in form.Age.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+        {% endfor %}
+        </p>
+        <p> {{ form.Gender.label }}{{form.Gender}}</p>
+        <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+        {{message}}
+    </form>
+</div>
+{% endblock %}
