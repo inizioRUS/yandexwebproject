@@ -1,14 +1,14 @@
 import datetime
-
+import requests
 from flask import Flask, render_template, url_for
-from flask_login import LoginManager, login_required, logout_user, login_user
+from flask_login import LoginManager, login_required, logout_user, login_user, current_user
 from flask_wtf import FlaskForm
 from werkzeug.utils import redirect
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, RadioField
 from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired
 from data import user
-
+import vk_api
 from data import db_session
 
 app = Flask(__name__)
@@ -18,10 +18,21 @@ login_manager.init_app(app)
 
 db_session.global_init("db/users.db")
 data = {'ru': {'reg': 'Регистрация', 'ent': 'Войти', 'abo': 'О нас', 'libot': 'Список ботов',
-               'parea': 'Личный кабинет', 'exi': 'Выйти'},
+               'parea': 'Личный кабинет', 'exi': 'Выйти', "lwor": "Последние работы",
+               'ide': "В разработке",
+               "text_abo": "Этот проект создан учениками Яндекс лицей из города Саратова(Гаранин Дмитрий, Астафуров Данил), главной спецификации проекта стало проектирование различных ботов в вк с различными возможностями, в данные момент идет активное программирование ботов."},
+
         'en': {'reg': 'Registration', 'ent': 'Log in', 'abo': 'About us', 'libot': 'List bots',
-               'parea': 'My profile', 'exi': 'Log out'}}
+               'parea': 'My profile', 'exi': 'Log out', "lwor": "Last works",
+               "ide": "In developing",
+               "text_abo": "This project was created by students of Yandex Lyceum from the city of Saratov (Dmitry Garanin, Danil Astafurov), the main specification of the project was the design of various bots in VK with various capabilities, at the moment there is active programming of bots."}}
 lang = "ru"
+
+
+def auth_handler():
+    key = input("Enter authentication code: ")
+    remember_device = True
+    return key, remember_device
 
 
 class RegisterForm(FlaskForm):
@@ -31,6 +42,7 @@ class RegisterForm(FlaskForm):
     Surname = StringField('Surname', validators=[DataRequired()])
     Name = StringField('Name', validators=[DataRequired()])
     Age = StringField('Age', validators=[DataRequired()])
+    Vk_url = StringField('Vk_url', validators=[DataRequired()])
     Gender = RadioField('Gender', choices=[
         ("Female", 'Female'), ('Male', 'Male')],
                         default=1, coerce=str)
@@ -86,6 +98,29 @@ def list_botf():
     return render_template('list_bot.html', title="2DYES", data=data, lang=lang)
 
 
+@app.route('/my_profile', methods=['GET', 'POST'])
+def my_profilef():
+    login, password = LOGIN, PASSWORD
+    vk_session = vk_api.VkApi(
+        login, password,
+        auth_handler=auth_handler
+    )
+    try:
+        vk_session.auth(token_only=True)
+    except vk_api.AuthError as error_msg:
+        print(error_msg)
+        return
+    vk = vk_session.get_api()
+    dataa = requests.get(
+        vk.users.get(user_ids=f"{current_user.vk_url.split('/')[-1]}", fields="photo_400_orig")[0][
+            'photo_400_orig'])
+    out = open(f"static/img/tmp/img{current_user.id}.jpg", "wb")
+    out.write(dataa.content)
+    out.close()
+    return render_template('my_profile.html', title="2DYES", data=data, lang=lang,
+                           current_user=current_user)
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
@@ -105,6 +140,7 @@ def register():
             name=form.Name.data,
             age=form.Age.data,
             gender=form.Gender.data,
+            vk_url=form.Vk_url.data,
             data_reg=datetime.datetime.now()
         )
         user1.set_password(form.Password.data)

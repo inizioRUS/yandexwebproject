@@ -26,7 +26,7 @@
         <div class="navbar-collapse collapse">
             <ul class="nav navbar-nav navbar-right">
                 {% if current_user.is_authenticated %}
-                <li><a href="/list_bot">{{data[lang]['parea']}}</a></li>
+                <li><a href="/my_profile">{{data[lang]['parea']}}</a></li>
                 <li><a href="/logout">{{data[lang]['exi']}}</a></li>
                 {% else %}
                 <li><a href="/register">{{data[lang]['reg']}}</a></li>
