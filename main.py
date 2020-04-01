@@ -7,7 +7,7 @@ import wikipedia
 import requests
 from data.geolocation import GeoLocation
 import random
-
+from config import *
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 
 from data import db_session
@@ -43,17 +43,27 @@ def auth_handler():
     return key, remember_device
 
 
-# def get_photo_id():
-#     login, password = LOGIN, PASSWORD
-#     vk_session = vk_api.VkApi(login, password, auth_handler=auth_handler)
-#     try:
-#         vk_session.auth(token_only=True)
-#     except vk_api.AuthError as error_msg:
-#         print(error_msg)
-#         return
-#     vk = vk_session.get_api()
-#     photos = vk.photos.get(group_id=193402549, album_id=271476159)
-#     return photos
+def upload_photo(photo):
+    login, password = LOGIN, PASSWORD
+    vk_session = vk_api.VkApi(login, password, auth_handler=auth_handler)
+    try:
+        vk_session.auth(token_only=True)
+    except vk_api.AuthError as error_msg:
+        print(error_msg)
+        return
+    url = vk_session.method('photos.getMessagesUploadServer')
+
+    response = requests.post(url=url['upload_url'],
+                             files={'photo': open(photo, 'rb')}).json()
+
+    photo_info = vk_session.method('photos.saveMessagesPhoto',
+                                   {'photo': response['photo'],
+                                    'server': response['server'],
+                                    'hash': response['hash']})[0]
+    photo = f'photo{photo_info["owner_id"]}_{photo_info["id"]}'
+    print(photo_info)
+    return photo
+
 
 def set_centr(coor_1, coor_2):
     x1, y1 = map(float, coor_1.split(','))
@@ -61,10 +71,13 @@ def set_centr(coor_1, coor_2):
     return [str((x1 + x2) / 2), str((y1 + y2) / 2)]
 
 
-def create_keyboard(command=None, buttons=None, inline=False, location=False):
+def create_keyboard(command=None, buttons=None, inline=False, location=False,
+                    geo=False):
     keyboard = VkKeyboard(one_time=False, inline=inline)
+    if geo:
+        keyboard.add_location_button()
+        keyboard.add_line()
     if not location:
-        i = 0
         for i in range(len(buttons) // 2):
             for j in range(2):
                 keyboard.add_button(command + buttons[i * 2 + j][0],
@@ -122,8 +135,9 @@ def get_map(address_ll, obj, i):
         'pt': '~'.join([address_ll + ',ya_ru', obj_ll + ',comma'])
     }
     response = requests.get(map_request, params=params)
-    return response.content
-
+    return response.content, json_response["features"][i]['properties'][
+        'name'] + ' ' + json_response["features"][i]['properties'][
+               'description']
 
 
 def translate_from_russian(mytext):
@@ -184,9 +198,18 @@ def geolocation(vk, user_id, command):
                                  keyboard=keyboard)
             elif len(command) == 3:
                 map = get_map(geoloc.geo, command[1], int(command[2]))
-                map_file = "map.png"
+                map_file = "static/img/map.jpg"
                 with open(map_file, "wb") as file:
-                    file.write(map)
+                    file.write(map[0])
+                photo = upload_photo(map_file)
+                print(photo)
+                keyboard = create_keyboard(command='',
+                                           buttons=COMMAND_LIST,
+                                           inline=False, geo=True)
+                vk.messages.send(user_id=user_id,
+                                 message=map[1],
+                                 random_id=random.randint(0, 2 ** 64),
+                                 attachment=photo)
 
 
         else:
@@ -224,7 +247,6 @@ def main():
         token=TOKEN)
     longpoll = VkBotLongPoll(vk_session, '193402549')
     vk = vk_session.get_api()
-
     for event in longpoll.listen():
         if event.type == VkBotEventType.GROUP_JOIN:
             response = vk.users.get(user_id=event.obj['user_id'])
@@ -281,5 +303,4 @@ def main():
 
 
 if __name__ == '__main__':
-    TOKEN = '59bee4154449bd32baddc0d47420e6dfaf633c482a5b7cddf2c4aab118c1b10e442b425cb3f1e4b33d4de'
     main()
