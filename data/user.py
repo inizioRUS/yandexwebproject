@@ -18,6 +18,7 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     age = sqlalchemy.Column(sqlalchemy.Integer)
     gender = sqlalchemy.Column(sqlalchemy.String)
     hashed_password = sqlalchemy.Column(sqlalchemy.String)
+    vk_url = sqlalchemy.Column(sqlalchemy.String)
     data_reg = sqlalchemy.Column(sqlalchemy.DateTime)
 
     def set_password(self, password):
