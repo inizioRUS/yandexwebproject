@@ -1,1 +1,1 @@
-from . import ideas
+from . import geolocation
