@@ -20,12 +20,16 @@ db_session.global_init("db/users.db")
 data = {'ru': {'reg': 'Регистрация', 'ent': 'Войти', 'abo': 'О нас', 'libot': 'Список ботов',
                'parea': 'Личный кабинет', 'exi': 'Выйти', "lwor": "Последние работы",
                'ide': "В разработке",
-               "text_abo": "Этот проект создан учениками Яндекс лицей из города Саратова(Гаранин Дмитрий, Астафуров Данил), главной спецификации проекта стало проектирование различных ботов в вк с различными возможностями, в данные момент идет активное программирование ботов."},
+               "text_abo": "Этот проект создан учениками Яндекс лицей из города Саратова(Гаранин Дмитрий, Астафуров Данил), главной спецификации проекта стало проектирование различных ботов в вк с различными возможностями, в данные момент идет активное программирование ботов.",
+               "auto": "Авторизация", 'fname': 'Имя:', 'lname': 'Фамилия:', 'vk': 'Ссылка на вк:',
+               'age': 'Возраст:', 'gen': 'Пол:', 'data': 'Дата регистрации:'},
 
         'en': {'reg': 'Registration', 'ent': 'Log in', 'abo': 'About us', 'libot': 'List bots',
                'parea': 'My profile', 'exi': 'Log out', "lwor": "Last works",
                "ide": "In developing",
-               "text_abo": "This project was created by students of Yandex Lyceum from the city of Saratov (Dmitry Garanin, Danil Astafurov), the main specification of the project was the design of various bots in VK with various capabilities, at the moment there is active programming of bots."}}
+               "text_abo": "This project was created by students of Yandex Lyceum from the city of Saratov (Dmitry Garanin, Danil Astafurov), the main specification of the project was the design of various bots in VK with various capabilities, at the moment there is active programming of bots.",
+               "auto": "Authorizarion", 'fname': 'Name:', 'lname': 'Surname:', 'vk': 'Vk_url:',
+               'age': 'Age:', 'gen': 'Gender:', 'data': 'Registration date:'}}
 lang = "ru"
 
 
