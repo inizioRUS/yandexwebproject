@@ -1,8 +1,11 @@
 {% extends "wrapper.html" %}
 {% block content %}
 <div id="dg">
-    <div class="container">
-        <h1 style="padding-top:50%;margin-bottom:30%;">{{data[lang]['ide']}}</h1>
+    <div class="container" style="padding-top:10%;margin-bottom:10%;">
+        <h1>Список ботов:</h1>
+        {% for user in user_list %}
+        <h1>{{user.name_bot}} специализация: {{user.genre[0].name}}</h1>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}

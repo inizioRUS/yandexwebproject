@@ -1,0 +1,32 @@
+{% extends "wrapper.html" %}
+{% block content %}
+<div class="reg">
+    <form action="" method="post" class="login" enctype="multipart/form-data"
+          style="padding-top:10%;padding-bottom:10% ; background: #e0e0e0;    text-align: center;">
+        <h1>Добавление новости</h1>
+        {{ form.hidden_tag() }}
+        {{ form.csrf_token }}
+        <p>
+            {{ form.Bot_title.label }}<br>
+            {{ form.Bot_title(class="form-control") }}<br>
+            {% for error in form.Bot_title.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+        {% endfor %}
+        </p>
+        <p>
+            {{ form.Genre.label }}<br>
+            {{ form.Genre(class="form-control") }}<br>
+            {% for error in form.Genre.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+        {% endfor %}
+        </p>
+        <p> {{form.photo}}</p>
+        <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+        {{message}}
+    </form>
+</div>
+{% endblock %}

@@ -1,13 +1,20 @@
 import datetime
+import os
+
 import requests
-from flask import Flask, render_template, url_for
+from flask import Flask, render_template, url_for, request
+from flask_restful import reqparse, abort, Api, Resource
 from flask_login import LoginManager, login_required, logout_user, login_user, current_user
 from flask_wtf import FlaskForm
-from werkzeug.utils import redirect
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, RadioField
+from flask_wtf.file import FileRequired
+from werkzeug.utils import redirect, secure_filename
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, RadioField, FileField, \
+    SelectField, TextAreaField
 from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired
 from data import user
+from data import genre
+from data import news
 import vk_api
 from data import db_session
 
@@ -60,6 +67,19 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Sign in')
 
 
+class NewsForm(FlaskForm):
+    Bot_title = StringField('Title', validators=[DataRequired()])
+    Genre = StringField('Genre', validators=[DataRequired()])
+    photo = FileField(validators=[FileRequired()])
+    submit = SubmitField('Sumbit')
+
+
+class Reviewsform(FlaskForm):
+    language = SelectField('Languages', choices=[('cpp', 'C++'),
+                                                 ('py', 'Python')])
+    Address = TextAreaField("Address")
+
+
 @app.route('/logout')
 @login_required
 def logout():
@@ -89,7 +109,13 @@ def load_user(user_id):
 
 @app.route('/', methods=['GET', 'POST'])
 def main():
-    return render_template('main.html', title="2DYES", data=data, lang=lang)
+    session = db_session.create_session()
+    news1 = session.query(news.News).all()
+    for i in news1:
+        f = open(f"static\img\inews_tmp\img{i.id}.png", mode="wb")
+        f.write(i.image)
+        f.close()
+    return render_template('main.html', title="2DYES", data=data, lang=lang, user_list=news1)
 
 
 @app.route('/about_us', methods=['GET', 'POST'])
@@ -99,7 +125,9 @@ def about_usf():
 
 @app.route('/list_bot', methods=['GET', 'POST'])
 def list_botf():
-    return render_template('list_bot.html', title="2DYES", data=data, lang=lang)
+    session = db_session.create_session()
+    news1 = session.query(news.News).all()
+    return render_template('list_bot.html', title="2DYES", data=data, lang=lang, user_list=news1)
 
 
 @app.route('/my_profile', methods=['GET', 'POST'])
@@ -167,6 +195,72 @@ def login():
                                message="Неправильный логин или пароль",
                                form=form, data=data, lang=lang)
     return render_template('login.html', title='Авторизация', form=form, data=data, lang=lang)
+
+
+@app.route('/news', methods=['GET', 'POST'])
+@login_required
+def add_news():
+    form = NewsForm()
+    if form.validate_on_submit():
+        session = db_session.create_session()
+        newss = news.News()
+        genree = genre.Genre()
+        genree.name = form.Genre.data
+        newss.name_bot = form.Bot_title.data
+        newss.genre.append(genree)
+        newss.image = form.photo.data.read()
+        current_user.newss.append(newss)
+        session.merge(current_user)
+        session.commit()
+        return redirect('/')
+    return render_template('news.html', title='Добавление работы',
+                           form=form, data=data, lang=lang)
+
+
+@app.route('/news/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_news(id):
+    form = NewsForm()
+    if request.method == "GET":
+        session = db_session.create_session()
+        job = session.query(news.News).filter(news.News.id == id,
+                                              current_user.id == 1).first()
+        if job:
+            job.name_bot = form.Bot_title.data
+            job.image = form.photo.data
+        else:
+            abort(404)
+    if form.validate_on_submit():
+        session = db_session.create_session()
+        job = session.query(news.News).filter(news.News.id == id,
+                                              (news.News.user == current_user) | (
+                                                      current_user.id == 1)).first()
+        if job:
+            genree = genre.Genre()
+            genree.name = form.Genre.data
+            job.name_bot = form.Bot_title.data
+            job.image = form.photo.data.read()
+            job.genre.remove(job.genre[0])
+            job.genre.append(genree)
+            session.commit()
+            return redirect('/')
+        else:
+            abort(404)
+    return render_template('news.html', title='Редактирование работы', form=form, data=data,
+                           lang=lang)
+
+
+@app.route('/news_delete/<int:id>', methods=['GET', 'POST'])
+@login_required
+def news_delete(id):
+    session = db_session.create_session()
+    job = session.query(news.News).filter(news.News.id == id, current_user.id == 1).first()
+    if job:
+        session.delete(job)
+        session.commit()
+    else:
+        abort(404)
+    return redirect('/')
 
 
 if __name__ == '__main__':

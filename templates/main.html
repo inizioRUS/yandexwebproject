@@ -9,23 +9,43 @@
         </div>
     </div>
 </div>
+
 <div id="dg">
     <div class="container">
         <div class="row centered">
             <h4>{{data[lang]['lwor']}}</h4>
-            <br>
+            {% if current_user.is_authenticated and current_user.id == 1%}
+            <div>
+                <a href="news" class="btn btn-warning">Добавить работу</a>
+            </div>
+            {% endif %}
+            {% set a = 0 %}
+            {% for user in user_list %}
+            {% if a % 2 == 0 %}
             <div class="col-lg-5 col-lg-offset-0">
                 <div class="tilt">
-                    <img src="/static/img/sample.png" alt="" ,
+                    <h2>{{user.name_bot}}</h2>
+                    <img src="static\img\inews_tmp\img{{user.id}}.png" alt="" ,
                          height="400" , width="200">
                 </div>
+                                    {% if current_user.is_authenticated and current_user.id == 1%}
+                    <div>
+                        <a href="/news/{{ user.id }}" class="btn btn-warning">Изменить</a>
+                        <a href="/news_delete/{{ user.id }}" class="btn btn-danger">Удалить</a>
+                    </div>
+                    {% endif %}
             </div>
+            {% else %}
             <div class="col-lg-2 col-lg-offset-4">
                 <div class="tilt">
-                    <img src="/static/img/sample.png" alt="" ,
+                    <h2>{{user.name_bot}}</h2>
+                    <img src="static\img\inews_tmp\img{{user.id}}.png" alt="" ,
                          height="400" , width="200">
                 </div>
             </div>
+            {% endif %}
+            {%set a = a + 1%}
+            {% endfor %}
         </div>
     </div>
 </div>
