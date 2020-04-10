@@ -1,0 +1,21 @@
+{% extends "wrapper.html" %}
+{% block content %}
+{% if current_user.is_authenticated and current_user.id == 1 %}
+<div style="padding-top:10%;margin-bottom:10%;">
+    <a href="/reviews_add" class="btn btn-warning">Добавить отзыв</a>
+</div>
+{% endif %}
+<form action="" method="post">
+    {{ form.hidden_tag() }}
+    <p>
+        {{ form.bot.label }}<br>
+        {{form.bot}}
+        {% for error in form.bot.errors %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endfor %}
+    </p>
+    <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+</form>
+{% endblock %}

@@ -1,6 +1,6 @@
 import datetime
 import os
-
+from config import LOGIN, PASSWORD
 import requests
 from flask import Flask, render_template, url_for, request
 from flask_restful import reqparse, abort, Api, Resource
@@ -15,6 +15,7 @@ from wtforms.validators import DataRequired
 from data import user
 from data import genre
 from data import news
+from data import reviews
 import vk_api
 from data import db_session
 
@@ -30,7 +31,6 @@ data = {'ru': {'reg': 'Регистрация', 'ent': 'Войти', 'abo': 'О 
                "text_abo": "Этот проект создан учениками Яндекс лицей из города Саратова(Гаранин Дмитрий, Астафуров Данил), главной спецификации проекта стало проектирование различных ботов в вк с различными возможностями, в данные момент идет активное программирование ботов.",
                "auto": "Авторизация", 'fname': 'Имя:', 'lname': 'Фамилия:', 'vk': 'Ссылка на вк:',
                'age': 'Возраст:', 'gen': 'Пол:', 'data': 'Дата регистрации:'},
-
         'en': {'reg': 'Registration', 'ent': 'Log in', 'abo': 'About us', 'libot': 'List bots',
                'parea': 'My profile', 'exi': 'Log out', "lwor": "Last works",
                "ide": "In developing",
@@ -74,10 +74,18 @@ class NewsForm(FlaskForm):
     submit = SubmitField('Sumbit')
 
 
-class Reviewsform(FlaskForm):
-    language = SelectField('Languages', choices=[('cpp', 'C++'),
-                                                 ('py', 'Python')])
-    Address = TextAreaField("Address")
+class Add_Reviewsform(FlaskForm):
+    session = db_session.create_session()
+    bot = SelectField('Бот', choices=[*[(user.name_bot, user.name_bot) for user in session.query(news.News).all()]])
+    text = TextAreaField("Текст")
+    submit = SubmitField('Sumbit')
+
+
+class Change_bot(FlaskForm):
+    session = db_session.create_session()
+    bot = SelectField('Бот', choices=[
+        *[(user.name_bot, user.name_bot) for user in session.query(news.News).all()]])
+    submit = SubmitField('Sumbit')
 
 
 @app.route('/logout')
@@ -261,6 +269,35 @@ def news_delete(id):
     else:
         abort(404)
     return redirect('/')
+
+
+@app.route('/reviews', methods=['GET', 'POST'])
+@login_required
+def reviews123():
+    form = Change_bot()
+    if form.validate_on_submit():
+        session = db_session.create_session()
+        return render_template('reviews.html', title='Редактирование работы', data=data,
+                               lang=lang, form=form)
+    return render_template('reviews.html', title='Редактирование работы', data=data,
+                           lang=lang, form=form)
+
+
+@app.route('/reviews_add', methods=['GET', 'POST'])
+@login_required
+def reviews_addf():
+    form = Add_Reviewsform()
+    if form.validate_on_submit():
+        session = db_session.create_session()
+        riew = reviews.Reviwes()
+        riew.text = form.text.data
+        riew.name_bot = form.bot.data
+        current_user.reviewss.append(riew)
+        session.merge(current_user)
+        session.commit()
+        return redirect('/reviews')
+    return render_template('add_reviews.html', title='Добавление работы',
+                           form=form, data=data, lang=lang)
 
 
 if __name__ == '__main__':
