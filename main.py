@@ -76,7 +76,8 @@ class NewsForm(FlaskForm):
 
 class Add_Reviewsform(FlaskForm):
     session = db_session.create_session()
-    bot = SelectField('Бот', choices=[*[(user.name_bot, user.name_bot) for user in session.query(news.News).all()]])
+    bot = SelectField('Бот', choices=[
+        *[(user.name_bot, user.name_bot) for user in session.query(news.News).all()]])
     text = TextAreaField("Текст")
     submit = SubmitField('Sumbit')
 
@@ -275,12 +276,15 @@ def news_delete(id):
 @login_required
 def reviews123():
     form = Change_bot()
+    session = db_session.create_session()
+    reviews_data = session.query(reviews.Reviwes).all()
     if form.validate_on_submit():
-        session = db_session.create_session()
+        reviews_data = session.query(reviews.Reviwes).filter(
+            reviews.Reviwes.name_bot == form.bot.data).all()
         return render_template('reviews.html', title='Редактирование работы', data=data,
-                               lang=lang, form=form)
+                               lang=lang, form=form, reviews_data=reviews_data)
     return render_template('reviews.html', title='Редактирование работы', data=data,
-                           lang=lang, form=form)
+                           lang=lang, form=form, reviews_data=reviews_data)
 
 
 @app.route('/reviews_add', methods=['GET', 'POST'])

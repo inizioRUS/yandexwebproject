@@ -1,21 +1,32 @@
 {% extends "wrapper.html" %}
 {% block content %}
-{% if current_user.is_authenticated and current_user.id == 1 %}
-<div style="padding-top:10%;margin-bottom:10%;">
-    <a href="/reviews_add" class="btn btn-warning">Добавить отзыв</a>
-</div>
-{% endif %}
+<h1 style="padding-top:50px;">Отзывы</h1>
 <form action="" method="post">
     {{ form.hidden_tag() }}
-    <p>
-        {{ form.bot.label }}<br>
-        {{form.bot}}
-        {% for error in form.bot.errors %}
+    {% if current_user.is_authenticated %}
+    <a href="/reviews_add" class="btn btn-warning">Добавить отзыв</a>
+    {% endif %}
+    {{ form.bot.label }}
+    {{form.bot}}
+    {% for error in form.bot.errors %}
     <div class="alert alert-danger" role="alert">
         {{ error }}
     </div>
-    {% endfor %}
-    </p>
-    <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+    {% endfor %} {{ form.submit(type="submit", class="btn btn-primary") }}
 </form>
+{% for review in range(reviews_data|length) %}
+{% if review % 2 == 0 %}
+<div style="background: #e0e0e0;">
+    <h2>Пользователь:{{reviews_data[review].user.name}} {{reviews_data[review].user.surname}}</h2>
+    <h2>Название бота:{{reviews_data[review].name_bot}}</h2>
+    <h2>Текст отзыва:{{reviews_data[review].text}}</h2>
+</div>
+{% else %}
+<div style="background: #ffffff;">
+    <h2>Пользователь:{{reviews_data[review].user.name}} {{reviews_data[review].user.surname}}</h2>
+    <h2>Название бота{{reviews_data[review].name_bot}}</h2>
+    <h2>Текст отзыва:{{reviews_data[review].text}}</h2>
+</div>
+{% endif %}
+{% endfor %}
 {% endblock %}
