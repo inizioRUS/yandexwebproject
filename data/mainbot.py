@@ -8,8 +8,9 @@ from . import geobot
 from . import helpbot
 from . import create_keyboard
 from . import weatherbot
+from . import newsbot
 
-COMMAND_DICT_BOT = {'!гео': geobot.GeoBot, '!помощь': helpbot.HelpBot, '!погода': weatherbot.WeatherBot}
+COMMAND_DICT_BOT = {'!гео': geobot.GeoBot, '!помощь': helpbot.HelpBot, '!погода': weatherbot.WeatherBot, '!новости': newsbot.NewsBot}
 
 
 class MainBot:

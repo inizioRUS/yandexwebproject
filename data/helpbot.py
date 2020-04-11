@@ -33,7 +33,7 @@ class HelpBot:
                               keyboard=keyboard)
 
     def send_help(self, command):
-        if command not in HELP_DICT:
+        if '!' + command not in COMMAND_DICT:
             return self.not_found_command()
         keyboard = create_keyboard.create_keyboard(
             buttons=COMMAND_LIST,

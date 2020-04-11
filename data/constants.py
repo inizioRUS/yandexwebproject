@@ -13,14 +13,29 @@ COMMAND_DICT = {
         'категории': [['Продукты', VkKeyboardColor.PRIMARY],
                       ['Метро', VkKeyboardColor.PRIMARY],
                       ['Аптека', VkKeyboardColor.PRIMARY]]},
-    '!погода': {'помощь': "В разработке...",
-                'категории': [['Погода сейчас', VkKeyboardColor.PRIMARY],
-                              ['Прогноз на сегодня', VkKeyboardColor.PRIMARY],
-                              ['Прогноз на завтра', VkKeyboardColor.PRIMARY],
-                              ['Прогноз на неделю', VkKeyboardColor.PRIMARY]]}}
-COMMAND_LIST = [['!Помощь', VkKeyboardColor.POSITIVE],
-                ['!Гео', VkKeyboardColor.DEFAULT],
-                ['!Погода', VkKeyboardColor.DEFAULT]]
+    '!погода': {
+        'помощь': "Сервис предлагает прогнозы погоды различной длительности, вам остается лишь выбрать&#128540;",
+        'категории': [['Погода сейчас', VkKeyboardColor.PRIMARY],
+                      ['Прогноз на сегодня', VkKeyboardColor.PRIMARY],
+                      ['Прогноз на завтра', VkKeyboardColor.PRIMARY],
+                      ['Прогноз на неделю', VkKeyboardColor.PRIMARY]]},
+    '!новости': {
+        'помощь': "Сервис предлагает подборку новостей на разные темы, вам остается лишь выбрать&#128540;",
+        'категории': [['Здоровье', VkKeyboardColor.PRIMARY],
+                      ['Смерть', VkKeyboardColor.PRIMARY],
+                      ['ДТП', VkKeyboardColor.PRIMARY],
+                      ['Преступления', VkKeyboardColor.PRIMARY],
+                      ['Политика', VkKeyboardColor.PRIMARY],
+                      ['Бизнес', VkKeyboardColor.PRIMARY],
+                      ['Плохие новости', VkKeyboardColor.PRIMARY],
+                      ['Хорошие новости', VkKeyboardColor.PRIMARY],
+                      ['СOVID-19', VkKeyboardColor.PRIMARY]]}, }
+COMMAND_LIST = [
+    ['!Гео', VkKeyboardColor.DEFAULT],
+    ['!Погода', VkKeyboardColor.DEFAULT],
+    ['!Новости', VkKeyboardColor.DEFAULT],
+    ['!Помощь', VkKeyboardColor.POSITIVE]
+]
 NUMBERS = [['&#49;&#8419;', VkKeyboardColor.DEFAULT],
            ['&#50;&#8419;', VkKeyboardColor.DEFAULT],
            ['&#51;&#8419;', VkKeyboardColor.DEFAULT],
@@ -37,33 +52,47 @@ VK_NUMBERS_DICT = {'&#49;&#8419;': 1, '&#50;&#8419;': 2, '&#51;&#8419;': 3,
                    '&#52;&#8419;': 4,
                    '&#53;&#8419;': 5, '&#54;&#8419;': 6}
 HELP_LIST = [['Гео', VkKeyboardColor.POSITIVE],
-             ['Погода', VkKeyboardColor.POSITIVE]]
-HELP_DICT = {
-    'гео': "Сервис предлагает поиск компании по выбранной категории и отображает ее на карте.\n1) Выберите одну из предложенных категорий или напишите свою (имениительный патеж, единственное число, регистр неважен).\n2) Далее выберите компанию, нажав на соответствующую кнопку на клавиатуре.\nНе теряйтесь&#128517;",
-    "погода": "В разработке..."}
+             ['Погода', VkKeyboardColor.POSITIVE],
+             ['Новости', VkKeyboardColor.POSITIVE]]
 WEATHER_CONDITION = {'clear': ['ясно'.title(), '&#9728;'],
                      'partly-cloudy': ['малооблачно'.title(), '&#127780;'],
                      'cloudy': ['облачно с прояснениями'.title(), '&#9925;'],
                      'overcast': ['пасмурно'.title(), '&#9729;'],
-                     'partly-cloudy-and-light-rain': ['небольшой дождь'.title(),
-                                                      '&#127782;'],
+                     'partly-cloudy-and-light-rain': [
+                         'небольшой дождь'.title(),
+                         '&#127782;'],
                      'partly-cloudy-and-rain': ['дождь'.title(), '&#127783;'],
                      'overcast-and-rain': ['сильный дождь'.title(), '&#9748;'],
                      'overcast-thunderstorms-with-rain': [
                          'сильный дождь, гроза'.title(), '&#9928;'],
-                     'cloudy-and-light-rain': ['небольшой дождь'.title(), '&#127782;'],
+                     'cloudy-and-light-rain': ['небольшой дождь'.title(),
+                                               '&#127782;'],
                      'overcast-and-light-rain': ['небольшой дождь'.title(),
                                                  '&#127782;'],
                      'cloudy-and-rain': ['дождь'.title(), '&#127783;'],
-                     'overcast-and-wet-snow': ['дождь со снегом'.title(), '&#9928;'],
+                     'overcast-and-wet-snow': ['дождь со снегом'.title(),
+                                               '&#9928;'],
                      'partly-cloudy-and-light-snow': ['небольшой снег'.title(),
                                                       '&#10052;'],
                      'partly-cloudy-and-snow': ['снег'.title(), '&#127784;'],
                      'overcast-and-snow': ['снегопад'.title(), '&#127784;'],
-                     'cloudy-and-light-snow': ['небольшой снег'.title(), '&#10052;'],
-                     'overcast-and-light-snow': ['небольшой снег'.title(), '&#10052;'],
+                     'cloudy-and-light-snow': ['небольшой снег'.title(),
+                                               '&#10052;'],
+                     'overcast-and-light-snow': ['небольшой снег'.title(),
+                                                 '&#10052;'],
                      'cloudy-and-snow': ['снег'.title(), '&#127784;']}
 WIND = {'nw': 'северо-западный', 'n': 'северный', 'ne': 'северо-восточный',
         'e': 'восточный', 'se': 'юго-восточный', 's': 'южный',
         'sw': 'юго-западный', 'w': 'западный', 'с': 'штиль'}
 
+NEWS = {'здоровье': ['HEALTH'.lower(),
+                     'Федеральное медико-биологическое агентство'.lower(),
+                     'ВОЗ'.lower(), 'Минздрав РФ'.lower()],
+        'смерть': ['DEATH'.lower()],
+        'дтп': ['ROAD-ACCIDENT'.lower(), 'ГИБДД'.lower()],
+        'преступления': ['CRIME'.lower()],
+        'политика': ["POLITIC".lower(), 'ЕС'.lower()],
+        'бизнес': ['BUSINESS'.lower(), 'FINANCE'.lower()],
+        'плохие новости': ['Negative text'.lower(), 'NEGATIVITY_WEAK'.lower()],
+        'сovid-19': ['COVID'.lower()],
+        'хорошие новости': ['Positive text'.lower()]}
