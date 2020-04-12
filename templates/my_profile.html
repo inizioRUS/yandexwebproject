@@ -4,14 +4,20 @@
     <h1 style="  text-align: center;">{{data[lang]['parea']}}</h1>
     <div class="container">
         <img src="/static/img/tmp/img{{current_user.id}}.jpg" , height="300" , width="300">
-        <div style="float:right;   font-size: 50px;">
-            <h2>{{data[lang]['lname']}} {{current_user.surname}}</h2>
-            <h2>{{data[lang]['fname']}} {{current_user.name}}</h2>
-            <h2>{{data[lang]['age']}} {{current_user.age}}</h2>
-            <h2>{{data[lang]['gen']}} {{current_user.gender}}</h2>
-            <h2>{{data[lang]['data']}} {{current_user.data_reg}}</h2>
-            <h2>{{data[lang]['vk']}} {{current_user.vk_url}}</h2>
+        <div  style="float:right;">
+            <h2 class="example">{{data[lang]['lname']}} {{current_user.surname}}</h2>
+            <h2 class="example">{{data[lang]['fname']}} {{current_user.name}}</h2>
+            <h2 class="example">{{data[lang]['age']}} {{current_user.age}}</h2>
+            <h2 class="example">{{data[lang]['gen']}} {{current_user.gender}}</h2>
+            <h2 class="example">{{data[lang]['data']}} {{current_user.data_reg}}</h2>
+            <h2 class="example">{{data[lang]['vk']}} {{current_user.vk_url}}</h2>
         </div>
+                {% if current_user.is_authenticated and current_user.id == 1%}
+        <div>
+            <a href="/user/{{ current_user.id }}"
+               class="btn btn-warning">{{data[lang]['change']}}</a>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

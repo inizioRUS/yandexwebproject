@@ -16,35 +16,41 @@
             <h4>{{data[lang]['lwor']}}</h4>
             {% if current_user.is_authenticated and current_user.id == 1%}
             <div>
-                <a href="news" class="btn btn-warning">Добавить работу</a>
+                <a href="news" class="btn btn-warning">{{data[lang]['add_work']}}</a>
             </div>
             {% endif %}
-            {% set a = 0 %}
-            {% for user in user_list %}
-            {% if a % 2 == 0 %}
-            <div class="col-lg-5 col-lg-offset-0">
+            {% for user in range(user_list|length) %}
+            {% if user % 2 == 0 %}
+            <div class="col-lg-6 col-lg-offset-0">
                 <div class="tilt">
-                    <h2>{{user.name_bot}}</h2>
-                    <img src="static\img\inews_tmp\img{{user.id}}.png" alt="" ,
+                    <h2>{{user_list[user].name_bot}}</h2>
+                    <img src="static\img\inews_tmp\img{{user_list[user].id}}.png" alt="" ,
                          height="400" , width="200">
                 </div>
-                                    {% if current_user.is_authenticated and current_user.id == 1%}
-                    <div>
-                        <a href="/news/{{ user.id }}" class="btn btn-warning">Изменить</a>
-                        <a href="/news_delete/{{ user.id }}" class="btn btn-danger">Удалить</a>
-                    </div>
-                    {% endif %}
+                {% if current_user.is_authenticated and current_user.id == 1%}
+                <div>
+                    <a href="/news/{{ user_list[user].id }}" class="btn btn-warning">{{data[lang]['change']}}</a>
+                    <a href="/news_delete/{{ user_list[user].id }}"
+                       class="btn btn-danger">{{data[lang]['delete']}}</a>
+                </div>
+                {% endif %}
             </div>
             {% else %}
-            <div class="col-lg-2 col-lg-offset-4">
+            <div class="col-lg-0 col-lg-offset-4">
                 <div class="tilt">
-                    <h2>{{user.name_bot}}</h2>
-                    <img src="static\img\inews_tmp\img{{user.id}}.png" alt="" ,
+                    <h2>{{user_list[user].name_bot}}</h2>
+                    <img src="static\img\inews_tmp\img{{user_list[user].id}}.png" alt="" ,
                          height="400" , width="200">
                 </div>
+                {% if current_user.is_authenticated and current_user.id == 1%}
+                <div>
+                    <a href="/news/{{ user_list[user].id }}" class="btn btn-warning">{{data[lang]['change']}}</a>
+                    <a href="/news_delete/{{ user_list[user].id }}"
+                       class="btn btn-danger">{{data[lang]['delete']}}</a>
+                </div>
+                {% endif %}
             </div>
             {% endif %}
-            {%set a = a + 1%}
             {% endfor %}
         </div>
     </div>

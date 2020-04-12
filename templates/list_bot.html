@@ -2,9 +2,9 @@
 {% block content %}
 <div id="dg">
     <div class="container" style="padding-top:10%;margin-bottom:10%;">
-        <h1>Список ботов:</h1>
+        <h1>{{data[lang]['libot']}}:</h1>
         {% for user in user_list %}
-        <h1>{{user.name_bot}} специализация: {{user.genre[0].name}}</h1>
+        <h1>{{user.name_bot}} {{data[lang]['specialization']}}: {{user.genre[0].name}}</h1>
         {% endfor %}
     </div>
 </div>

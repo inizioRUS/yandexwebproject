@@ -1,5 +1,7 @@
 import datetime
 import sqlalchemy
+import os
+import hashlib
 from flask_login import UserMixin
 from sqlalchemy import orm
 from sqlalchemy_serializer import SerializerMixin
@@ -24,7 +26,22 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     reviewss = orm.relation("Reviwes", back_populates='user')
 
     def set_password(self, password):
-        self.hashed_password = generate_password_hash(password)
+        salt = os.urandom(32)
+        key = hashlib.pbkdf2_hmac(
+            'sha256',
+            password.encode('utf-8'),
+            salt,
+            100000)
+        storage = salt + key
+        self.hashed_password = storage
 
     def check_password(self, password):
-        return check_password_hash(self.hashed_password, password)
+        salt_from_storage = self.hashed_password[:32]
+        key_from_storage = self.hashed_password[32:]
+        new_key = hashlib.pbkdf2_hmac(
+            'sha256',
+            password.encode('utf-8'),
+            salt_from_storage,
+            100000
+        )
+        return new_key == key_from_storage

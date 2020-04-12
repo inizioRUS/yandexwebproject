@@ -73,3 +73,27 @@ body{
     margin-left:5%;
     margin-right:5%;
 }
+@media screen and (min-width: 601px) {
+.example {
+    font-size: 30px;
+  }
+}
+
+@media screen and (max-width: 600px) {
+.example {
+    font-size: 20px;
+  }
+}
+@media screen and (min-width: 601px) {
+.image {
+    height:20px;
+    width:33px;
+  }
+}
+
+@media screen and (max-width: 600px) {
+.image {
+    height:10px;
+    width:20px;
+  }
+}
