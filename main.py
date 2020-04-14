@@ -1,53 +1,62 @@
 import datetime
-import os
-from config import LOGIN, PASSWORD
+from config import LOGIN, PASSWORD, secret_key
 import requests
 from flask import Flask, render_template, url_for, request
-from flask_restful import reqparse, abort, Api, Resource
+from flask_restful import abort, Api
 from flask_login import LoginManager, login_required, logout_user, login_user, current_user
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileRequired
-from werkzeug.utils import redirect, secure_filename
+from werkzeug.utils import redirect
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, RadioField, FileField, \
     SelectField, TextAreaField
 from wtforms.fields.html5 import EmailField
 from wtforms.validators import DataRequired
-from data import user
-from data import genre
-from data import news
-from data import reviews
+from data.user import User
+from data.genre import Genre
+from data.news import News
+from data.reviews import Reviwes
 import vk_api
 from data import db_session
+from data.reviewsr import ReviewListResource, ReviewResource
+from data.userr import UserListResource, UserResource
+from data.newsr import NewsListResource, NewsResource
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'super_secret_key'
+api = Api(app)
+app.config['SECRET_KEY'] = secret_key
 login_manager = LoginManager()
 login_manager.init_app(app)
 
 db_session.global_init("db/users.db")
-data = {'ru': {'reg': 'Регистрация', 'ent': 'Войти', 'abo': 'О нас', 'libot': 'Список ботов',
-               'parea': 'Личный кабинет', 'exi': 'Выйти', "lwor": "Последние работы",
-               'ide': "В разработке",
-               "text_abo": "Этот проект создан учениками Яндекс лицей из города Саратова(Гаранин Дмитрий, Астафуров Данил), главной спецификации проекта стало проектирование различных ботов в вк с различными возможностями, в данные момент идет активное программирование ботов.",
-               "auto": "Авторизация", 'fname': 'Имя:', 'lname': 'Фамилия:', 'vk': 'Ссылка на вк:',
-               'age': 'Возраст:', 'gen': 'Пол:', 'data': 'Дата регистрации:', 'reviews': 'Отзывы',
-               'add_work': 'Добавить работу', 'change': 'Изменить', "delete": 'Удалить',
-               'specialization': 'специализация'},
-        'en': {'reg': 'Registration', 'ent': 'Log in', 'abo': 'About us', 'libot': 'List bots',
-               'parea': 'My profile', 'exi': 'Log out', "lwor": "Last works",
-               "ide": "In developing",
-               "text_abo": "This project was created by students of Yandex Lyceum from the city of Saratov (Dmitry Garanin, Danil Astafurov), the main specification of the project was the design of various bots in VK with various capabilities, at the moment there is active programming of bots.",
-               "auto": "Authorizarion", 'fname': 'Name:', 'lname': 'Surname:', 'vk': 'Vk_url:',
-               'age': 'Age:', 'gen': 'Gender:', 'data': 'Registration date:', 'reviews': 'Reviews',
-               'add_work': 'Add job', 'change': 'Edit', "delete": 'Delete',
-               'specialization': 'specialization'}}
+
+translate = {'ru': {'reg': 'Регистрация', 'ent': 'Войти', 'abo': 'О нас', 'libot': 'Список ботов',
+                    'parea': 'Личный кабинет', 'exi': 'Выйти', "lwor": "Последние работы",
+                    'ide': "В разработке", "add_review": "Добавить отзыв",
+                    "text_abo": "Этот проект создан учениками Яндекс лицей из города Саратова(Гаранин Дмитрий, Астафуров Данил), главной спецификации проекта стало проектирование различных ботов в вк с различными возможностями, в данные момент идет активное программирование ботов.",
+                    "auto": "Авторизация", 'fname': 'Имя:', 'lname': 'Фамилия:',
+                    'vk': 'Ссылка на вк:',
+                    'age': 'Возраст:', 'gen': 'Пол:', 'data': 'Дата регистрации:',
+                    'reviews': 'Отзывы',
+                    'add_work': 'Добавить работу', 'change': 'Изменить', "delete": 'Удалить',
+                    'specialization': 'специализация', 'name_bot': 'Название бота:',
+                    'user': 'Пользователь:', 'review_text': "Текст отзыва:"},
+             'en': {'reg': 'Registration', 'ent': 'Log in', 'abo': 'About us', 'libot': 'List bots',
+                    'parea': 'My profile', 'exi': 'Log out', "lwor": "Last works",
+                    "ide": "In developing", "add_review": "Add a review",
+                    "text_abo": "This project was created by students of Yandex Lyceum from the city of Saratov (Dmitry Garanin, Danil Astafurov), the main specification of the project was the design of various bots in VK with various capabilities, at the moment there is active programming of bots.",
+                    "auto": "Authorizarion", 'fname': 'Name:', 'lname': 'Surname:', 'vk': 'Vk_url:',
+                    'age': 'Age:', 'gen': 'Gender:', 'data': 'Registration date:',
+                    'reviews': 'Reviews',
+                    'add_work': 'Add job', 'change': 'Edit', "delete": 'Delete',
+                    'specialization': 'specialization', 'name_bot': 'Bot name:', 'user': 'ser:',
+                    'review_text': "Review text:"}}
 lang = "ru"
-now = "/"
+now_page = "/"
 
 
 def change_now(data):
-    global now
-    now = data
+    global now_page
+    now_page = data
 
 
 def auth_handler():
@@ -97,16 +106,21 @@ class NewsForm(FlaskForm):
 
 class Add_Reviewsform(FlaskForm):
     session = db_session.create_session()
-    bot = SelectField('Бот', choices=[
-        *[(user.name_bot, user.name_bot) for user in session.query(news.News).all()]])
-    text = TextAreaField("Текст")
+    bot = SelectField('Bot', choices=[
+        *[(user.name_bot, user.name_bot) for user in session.query(News).all()]])
+    text = TextAreaField("Text")
     submit = SubmitField('Sumbit')
 
 
 class Change_bot(FlaskForm):
     session = db_session.create_session()
-    bot = SelectField('Бот', choices=[
-        *[(user.name_bot, user.name_bot) for user in session.query(news.News).all()]])
+    bot = SelectField('Bot', choices=[
+        *[(user.name_bot, user.name_bot) for user in session.query(News).all()]])
+    submit = SubmitField('Sumbit')
+
+
+class Change_Reviewsform(FlaskForm):
+    text = TextAreaField("Text")
     submit = SubmitField('Sumbit')
 
 
@@ -121,46 +135,47 @@ def logout():
 def ruf():
     global lang
     lang = "ru"
-    return redirect(now)
+    return redirect(now_page)
 
 
 @app.route('/en')
 def enf():
     global lang
     lang = "en"
-    return redirect(now)
+    return redirect(now_page)
 
 
 @login_manager.user_loader
 def load_user(user_id):
     session = db_session.create_session()
-    return session.query(user.User).get(user_id)
+    return session.query(User).get(user_id)
 
 
 @app.route('/', methods=['GET', 'POST'])
-def main():
+def main_page():
     change_now('/')
     session = db_session.create_session()
-    news1 = session.query(news.News).all()
+    news1 = session.query(News).all()
     for i in news1:
         f = open(f"static\img\inews_tmp\img{i.id}.png", mode="wb")
         f.write(i.image)
         f.close()
-    return render_template('main.html', title="2DYES", data=data, lang=lang, user_list=news1)
+    return render_template('main.html', title="2DYES", data=translate, lang=lang, user_list=news1)
 
 
 @app.route('/about_us', methods=['GET', 'POST'])
-def about_usf():
+def about_us():
     change_now('/about_us')
-    return render_template('about_us.html', title="2DYES", data=data, lang=lang)
+    return render_template('about_us.html', title="About us", data=translate, lang=lang)
 
 
 @app.route('/list_bot', methods=['GET', 'POST'])
-def list_botf():
+def list_bot():
     change_now('/list_bot')
     session = db_session.create_session()
-    news1 = session.query(news.News).all()
-    return render_template('list_bot.html', title="2DYES", data=data, lang=lang, user_list=news1)
+    news1 = session.query(News).all()
+    return render_template('list_bot.html', title="List bot", data=translate, lang=lang,
+                           user_list=news1)
 
 
 @app.route('/my_profile', methods=['GET', 'POST'])
@@ -183,7 +198,7 @@ def my_profilef():
     out = open(f"static/img/tmp/img{current_user.id}.jpg", "wb")
     out.write(dataa.content)
     out.close()
-    return render_template('my_profile.html', title="2DYES", data=data, lang=lang,
+    return render_template('my_profile.html', title="My profile", data=translate, lang=lang,
                            current_user=current_user)
 
 
@@ -195,13 +210,13 @@ def register():
         if form.Password.data != form.Password_again.data:
             return render_template('register.html', title='Регистрация',
                                    form=form,
-                                   message="Пароли не совпадают", data=data, lang=lang)
+                                   message="Пароли не совпадают", data=translate, lang=lang)
         session = db_session.create_session()
-        if session.query(user.User).filter(user.User.email == form.Email.data).first():
+        if session.query(User).filter(User.email == form.Email.data).first():
             return render_template('register.html', title='Регистрация',
                                    form=form,
-                                   message="Такой пользователь уже есть", data=data, lang=lang)
-        user1 = user.User(
+                                   message="Такой пользователь уже есть", data=translate, lang=lang)
+        user1 = User(
             email=form.Email.data,
             surname=form.Surname.data,
             name=form.Name.data,
@@ -214,7 +229,8 @@ def register():
         session.add(user1)
         session.commit()
         return redirect(url_for("main"))
-    return render_template('register.html', title='Регистрация', form=form, data=data, lang=lang)
+    return render_template('register.html', title='Регистрация', form=form, data=translate,
+                           lang=lang)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -223,14 +239,14 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         session = db_session.create_session()
-        user1 = session.query(user.User).filter(user.User.email == form.email.data).first()
+        user1 = session.query(User).filter(User.email == form.email.data).first()
         if user1 and user1.check_password(form.password.data):
             login_user(user1, remember=form.remember_me.data)
             return redirect("/")
         return render_template('login.html',
                                message="Неправильный логин или пароль",
-                               form=form, data=data, lang=lang)
-    return render_template('login.html', title='Авторизация', form=form, data=data, lang=lang)
+                               form=form, data=translate, lang=lang)
+    return render_template('login.html', title='Авторизация', form=form, data=translate, lang=lang)
 
 
 @app.route('/news', methods=['GET', 'POST'])
@@ -240,8 +256,8 @@ def add_news():
     form = NewsForm()
     if form.validate_on_submit():
         session = db_session.create_session()
-        newss = news.News()
-        genree = genre.Genre()
+        newss = News()
+        genree = Genre()
         genree.name = form.Genre.data
         newss.name_bot = form.Bot_title.data
         newss.genre.append(genree)
@@ -251,7 +267,7 @@ def add_news():
         session.commit()
         return redirect('/')
     return render_template('news.html', title='Добавление работы',
-                           form=form, data=data, lang=lang)
+                           form=form, data=translate, lang=lang)
 
 
 @app.route('/news/<int:id>', methods=['GET', 'POST'])
@@ -261,8 +277,8 @@ def edit_news(id):
     form = NewsForm()
     if request.method == "GET":
         session = db_session.create_session()
-        job = session.query(news.News).filter(news.News.id == id,
-                                              current_user.id == 1).first()
+        job = session.query(News).filter(News.id == id,
+                                         current_user.id == 1).first()
         if job:
             job.name_bot = form.Bot_title.data
             job.image = form.photo.data
@@ -270,11 +286,11 @@ def edit_news(id):
             abort(404)
     if form.validate_on_submit():
         session = db_session.create_session()
-        job = session.query(news.News).filter(news.News.id == id,
-                                              (news.News.user == current_user) | (
-                                                      current_user.id == 1)).first()
+        job = session.query(News).filter(News.id == id,
+                                         (News.user == current_user) | (
+                                                 current_user.id == 1)).first()
         if job:
-            genree = genre.Genre()
+            genree = Genre()
             genree.name = form.Genre.data
             job.name_bot = form.Bot_title.data
             job.image = form.photo.data.read()
@@ -284,7 +300,7 @@ def edit_news(id):
             return redirect('/')
         else:
             abort(404)
-    return render_template('news.html', title='Редактирование работы', form=form, data=data,
+    return render_template('news.html', title='Редактирование работы', form=form, data=translate,
                            lang=lang)
 
 
@@ -295,8 +311,8 @@ def edit_user(id):
     form = EditForm()
     if request.method == "GET":
         session = db_session.create_session()
-        users = session.query(user.User).filter(user.User.id == id,
-                                                current_user.id == id).first()
+        users = session.query(User).filter(User.id == id,
+                                           current_user.id == id).first()
         if users:
             users.email = users.email
             users.hashed_password = users.hashed_password
@@ -310,7 +326,7 @@ def edit_user(id):
             abort(404)
     if form.validate_on_submit():
         session = db_session.create_session()
-        users = session.query(user.User).filter(user.User.id == id, current_user.id == id).first()
+        users = session.query(User).filter(User.id == id, current_user.id == id).first()
         if users:
             users.surname = form.Surname.data
             users.name = form.Name.data
@@ -321,7 +337,8 @@ def edit_user(id):
             return redirect('/my_profile')
         else:
             abort(404)
-    return render_template('useredit.html', title='Редактирование работы', form=form, data=data,
+    return render_template('useredit.html', title='Редактирование аккаунта', form=form,
+                           data=translate,
                            lang=lang)
 
 
@@ -330,7 +347,7 @@ def edit_user(id):
 def news_delete(id):
     change_now(f'/news_delete/{id}')
     session = db_session.create_session()
-    job = session.query(news.News).filter(news.News.id == id, current_user.id == 1).first()
+    job = session.query(News).filter(News.id == id, current_user.id == 1).first()
     if job:
         session.delete(job)
         session.commit()
@@ -345,13 +362,13 @@ def reviews123():
     change_now('/reviews')
     form = Change_bot()
     session = db_session.create_session()
-    reviews_data = session.query(reviews.Reviwes).all()
+    reviews_data = session.query(Reviwes).all()
     if form.validate_on_submit():
-        reviews_data = session.query(reviews.Reviwes).filter(
-            reviews.Reviwes.name_bot == form.bot.data).all()
-        return render_template('reviews.html', title='Редактирование работы', data=data,
+        reviews_data = session.query(Reviwes).filter(
+            Reviwes.name_bot == form.bot.data).all()
+        return render_template('reviews.html', title='Отзывы', data=translate,
                                lang=lang, form=form, reviews_data=reviews_data)
-    return render_template('reviews.html', title='Редактирование работы', data=data,
+    return render_template('reviews.html', title='Отзывы', data=translate,
                            lang=lang, form=form, reviews_data=reviews_data)
 
 
@@ -362,16 +379,68 @@ def reviews_addf():
     form = Add_Reviewsform()
     if form.validate_on_submit():
         session = db_session.create_session()
-        riew = reviews.Reviwes()
+        riew = Reviwes()
         riew.text = form.text.data
         riew.name_bot = form.bot.data
         current_user.reviewss.append(riew)
         session.merge(current_user)
         session.commit()
         return redirect('/reviews')
-    return render_template('add_reviews.html', title='Добавление работы',
-                           form=form, data=data, lang=lang)
+    return render_template('add_reviews.html', title='Добавление отзыва',
+                           form=form, data=translate, lang=lang)
 
 
+@app.route('/reviews_delete/<int:id>', methods=['GET', 'POST'])
+@login_required
+def reviews_delete(id):
+    change_now(f'/reviews_delete/{id}')
+    session = db_session.create_session()
+    reviewss = session.query(Reviwes).filter(Reviwes.id == id,
+                                             current_user.id == 1).first()
+    if reviewss:
+        session.delete(reviewss)
+        session.commit()
+    else:
+        abort(404)
+    return redirect('/reviews')
+
+
+@app.route('/reviews/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_use(id):
+    change_now(f'/reviews/{id}')
+    form = Change_Reviewsform()
+    if request.method == "GET":
+        session = db_session.create_session()
+        reviewss = session.query(Reviwes).filter(Reviwes.id == id,
+                                                 current_user.id == 1).first()
+        if reviewss:
+            reviewss.id = reviewss.id
+            reviewss.user_id = reviewss.user_id
+            reviewss.text = reviewss.text
+            reviewss.name_bot = reviewss.name_bot
+        else:
+            abort(404)
+    if form.validate_on_submit():
+        session = db_session.create_session()
+        reviewss = session.query(Reviwes).filter(Reviwes.id == id,
+                                                 current_user.id == 1).first()
+        if reviewss:
+            reviewss.text = form.text.data
+            session.commit()
+            return redirect('/reviews')
+        else:
+            abort(404)
+    return render_template('change_reviews.html', title='Редактирование отзыва', form=form,
+                           data=translate,
+                           lang=lang)
+
+
+api.add_resource(UserListResource, '/api/user')
+api.add_resource(UserResource, '/api/user/<int:user_id>')
+api.add_resource(NewsListResource, '/api/news')
+api.add_resource(NewsResource, '/api/news/<int:news_id>')
+api.add_resource(ReviewListResource, '/api/review')
+api.add_resource(ReviewResource, '/api/review/<int:rew_id>')
 if __name__ == '__main__':
     app.run(port=8080, host='127.0.0.1')
