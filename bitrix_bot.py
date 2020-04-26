@@ -139,9 +139,6 @@ def main():
             bitrix_bot = BitrixBot(vk, client, event.obj.message['from_id'])
             bitrix_bot.analyse_type(event.obj.message)
 
-            # response = vk.users.get(user_id=event.obj.message['from_id'],
-            #                         fields="bdate, city")
-
 
 if __name__ == '__main__':
     main()
