@@ -44,7 +44,7 @@ class BitrixBot:
         self.FUNCTION_DICT = {'start': self.start, 'category': self.category,
                               'char_1': self.char_1, 'accept': self.accept,
                               'description': self.description,
-                              'contact': self.contact}
+                              'contact': self.contact, 'manager': self.manager}
 
     def analyse_type(self, message):
         if message['attachments']:
@@ -78,7 +78,7 @@ class BitrixBot:
                 state = 'start'
                 self.client.set(self.user_id, "start")
             logging.info(state)
-            self.FUNCTION_DICT[state](text)
+            self.FUNCTION_DICT[state.split('-')[0]](text)
 
     def ask(self):
         pass
@@ -112,16 +112,90 @@ class BitrixBot:
                               keyboard=keyboard)
 
     def char_1(self, text):
-        pass
+        if text in ['организация', 'индивидуально']:
+            self.client.set(self.user_id, "accept")
+            keyboard = create_keyboard(
+                buttons=[['Я согласен с условиями', VkKeyboardColor.POSITIVE],
+                         ['Отменить заказ', VkKeyboardColor.NEGATIVE]], d=1,
+                ask=False)
+            self.vk.messages.send(user_id=self.user_id,
+                                  message=f'Предварительная стоимость составляет ...\nПредоплата ...%\nВы согласны с условиями?',
+                                  random_id=random.randint(0, 2 ** 64),
+                                  keyboard=keyboard)
 
     def accept(self, text):
-        pass
+        if text.startswith('я согласен'):
+            self.client.set(self.user_id, "description")
+            keyboard = create_keyboard(
+                buttons=[['Продолжить', VkKeyboardColor.PRIMARY]])
+            self.vk.messages.send(user_id=self.user_id,
+                                  message='Кратко опишите вашу идею и нажмите "продолжить"',
+                                  random_id=random.randint(0, 2 ** 64),
+                                  keyboard=keyboard)
+        elif text.startswith('отменить'):
+            self.client.set(self.user_id, 'start')
+            keyboard = create_keyboard(
+                buttons=[['Хочу бота', VkKeyboardColor.POSITIVE]])
+            self.vk.messages.send(user_id=self.user_id,
+                                  message=f'Вас приветствует служба покупки ботов от проекта 2DYeS&#128104;&#8205;&#128187;',
+                                  random_id=random.randint(0, 2 ** 64))
+            self.vk.messages.send(user_id=self.user_id,
+                                  message=f'Следуйте инструкциям на клавиатуре&#9000;',
+                                  random_id=random.randint(0, 2 ** 64),
+                                  keyboard=keyboard)
 
     def description(self, text):
-        pass
+        if text == 'продолжить':
+            self.client.set(self.user_id, "contact")
+            keyboard = create_keyboard(
+                buttons=[['Вконтакте', VkKeyboardColor.DEFAULT],
+                         ['Email', VkKeyboardColor.DEFAULT],
+                         ['Номер телефона', VkKeyboardColor.DEFAULT]], d=2)
+            self.vk.messages.send(user_id=self.user_id,
+                                  message=f'Как нам с вами связаться?',
+                                  random_id=random.randint(0, 2 ** 64),
+                                  keyboard=keyboard)
+        else:
+            pass
 
     def contact(self, text):
-        pass
+        if text.startswith('вк'):
+            self.client.set(self.user_id, "manager-vk")
+            return self.manager(text)
+        elif text == 'email':
+            self.client.set(self.user_id, "manager-email")
+            keyboard = create_keyboard(
+                buttons=[])
+            self.vk.messages.send(user_id=self.user_id,
+                                  message='Введите ваш адрес email',
+                                  random_id=random.randint(0, 2 ** 64),
+                                  keyboard=keyboard)
+        elif text.startswith('номер'):
+            self.client.set(self.user_id, "manager-phone")
+            keyboard = create_keyboard(
+                buttons=[])
+            self.vk.messages.send(user_id=self.user_id,
+                                  message='Введите ваш номер телефона',
+                                  random_id=random.randint(0, 2 ** 64),
+                                  keyboard=keyboard)
+        else:
+            pass
+
+    def manager(self, text):
+        contact = self.client.get(self.user_id).decode('utf-8').split('-')[1]
+        if contact == 'vk':
+            pass
+        elif contact == 'email':
+            pass
+        elif contact == 'phone':
+            pass
+        self.client.set(self.user_id, 'start')
+        keyboard = create_keyboard(
+            buttons=[['Хочу бота', VkKeyboardColor.POSITIVE]])
+        self.vk.messages.send(user_id=self.user_id,
+                              message=f'В течении следующего часа с вами свяжется менеджер для оговорения стоимости и сроков сдачи.\nОжидайте...',
+                              random_id=random.randint(0, 2 ** 64),
+                              keyboard=keyboard)
 
 
 def main():
