@@ -1,10 +1,11 @@
 import datetime
-from config import LOGIN, PASSWORD, secret_key
+from config import LOGIN, PASSWORD, secret_key, key1, key2
 import requests
+import vk_api
 from flask import Flask, render_template, url_for, request
 from flask_restful import abort, Api
 from flask_login import LoginManager, login_required, logout_user, login_user, current_user
-from flask_wtf import FlaskForm
+from flask_wtf import FlaskForm, RecaptchaField
 from flask_wtf.file import FileRequired
 from werkzeug.utils import redirect
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, RadioField, FileField, \
@@ -15,7 +16,6 @@ from data.user import User
 from data.genre import Genre
 from data.news import News
 from data.reviews import Reviwes
-import vk_api
 from data import db_session
 from data.reviewsr import ReviewListResource, ReviewResource
 from data.userr import UserListResource, UserResource
@@ -24,6 +24,8 @@ from data.newsr import NewsListResource, NewsResource
 app = Flask(__name__)
 api = Api(app)
 app.config['SECRET_KEY'] = secret_key
+app.config['RECAPTCHA_PUBLIC_KEY'] = key1
+app.config['RECAPTCHA_PRIVATE_KEY'] = key2
 login_manager = LoginManager()
 login_manager.init_app(app)
 
@@ -76,6 +78,7 @@ class RegisterForm(FlaskForm):
     Gender = RadioField('Gender', choices=[
         ("Female", 'Female'), ('Male', 'Male')],
                         default=1, coerce=str)
+    recaptcha = RecaptchaField()
     submit = SubmitField('Sumbit')
 
 
@@ -155,12 +158,12 @@ def load_user(user_id):
 def main_page():
     change_now('/')
     session = db_session.create_session()
-    news1 = session.query(News).all()
-    for i in news1:
-        f = open(f"static\img\inews_tmp\img{i.id}.png", mode="wb")
-        f.write(i.image)
+    all_news = session.query(News).all()
+    for news in all_news:
+        f = open(f"static\img\inews_tmp\img{news.id}.png", mode="wb")
+        f.write(news.image)
         f.close()
-    return render_template('main.html', title="2DYES", data=translate, lang=lang, user_list=news1)
+    return render_template('main.html', title="2DYES", data=translate, lang=lang, user_list=all_news)
 
 
 @app.route('/about_us', methods=['GET', 'POST'])
@@ -173,13 +176,13 @@ def about_us():
 def list_bot():
     change_now('/list_bot')
     session = db_session.create_session()
-    news1 = session.query(News).all()
+    all_news = session.query(News).all()
     return render_template('list_bot.html', title="List bot", data=translate, lang=lang,
-                           user_list=news1)
+                           user_list=all_news)
 
 
 @app.route('/my_profile', methods=['GET', 'POST'])
-def my_profilef():
+def my_profile():
     change_now('/my_profile')
     login, password = LOGIN, PASSWORD
     vk_session = vk_api.VkApi(
@@ -216,7 +219,7 @@ def register():
             return render_template('register.html', title='Регистрация',
                                    form=form,
                                    message="Такой пользователь уже есть", data=translate, lang=lang)
-        user1 = User(
+        user = User(
             email=form.Email.data,
             surname=form.Surname.data,
             name=form.Name.data,
@@ -225,10 +228,10 @@ def register():
             vk_url=form.Vk_url.data,
             data_reg=datetime.datetime.now()
         )
-        user1.set_password(form.Password.data)
-        session.add(user1)
+        user.set_password(form.Password.data)
+        session.add(user)
         session.commit()
-        return redirect(url_for("main"))
+        return redirect("/")
     return render_template('register.html', title='Регистрация', form=form, data=translate,
                            lang=lang)
 
@@ -239,9 +242,9 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         session = db_session.create_session()
-        user1 = session.query(User).filter(User.email == form.email.data).first()
-        if user1 and user1.check_password(form.password.data):
-            login_user(user1, remember=form.remember_me.data)
+        user = session.query(User).filter(User.email == form.email.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user, remember=form.remember_me.data)
             return redirect("/")
         return render_template('login.html',
                                message="Неправильный логин или пароль",
@@ -256,13 +259,13 @@ def add_news():
     form = NewsForm()
     if form.validate_on_submit():
         session = db_session.create_session()
-        newss = News()
-        genree = Genre()
-        genree.name = form.Genre.data
-        newss.name_bot = form.Bot_title.data
-        newss.genre.append(genree)
-        newss.image = form.photo.data.read()
-        current_user.newss.append(newss)
+        news = News()
+        genre = Genre()
+        genre.name = form.Genre.data
+        news.name_bot = form.Bot_title.data
+        news.genre.append(genre)
+        news.image = form.photo.data.read()
+        current_user.newss.append(news)
         session.merge(current_user)
         session.commit()
         return redirect('/')
@@ -277,25 +280,25 @@ def edit_news(id):
     form = NewsForm()
     if request.method == "GET":
         session = db_session.create_session()
-        job = session.query(News).filter(News.id == id,
-                                         current_user.id == 1).first()
-        if job:
-            job.name_bot = form.Bot_title.data
-            job.image = form.photo.data
+        news = session.query(News).filter(News.id == id,
+                                          current_user.id == 1).first()
+        if news:
+            news.name_bot = form.Bot_title.data
+            news.image = form.photo.data
         else:
             abort(404)
     if form.validate_on_submit():
         session = db_session.create_session()
-        job = session.query(News).filter(News.id == id,
-                                         (News.user == current_user) | (
-                                                 current_user.id == 1)).first()
-        if job:
-            genree = Genre()
-            genree.name = form.Genre.data
-            job.name_bot = form.Bot_title.data
-            job.image = form.photo.data.read()
-            job.genre.remove(job.genre[0])
-            job.genre.append(genree)
+        news = session.query(News).filter(News.id == id,
+                                          (News.user == current_user) | (
+                                                  current_user.id == 1)).first()
+        if news:
+            genre = Genre()
+            genre.name = form.Genre.data
+            news.name_bot = form.Bot_title.data
+            news.image = form.photo.data.read()
+            news.genre.remove(news.genre[0])
+            news.genre.append(genre)
             session.commit()
             return redirect('/')
         else:
@@ -311,28 +314,28 @@ def edit_user(id):
     form = EditForm()
     if request.method == "GET":
         session = db_session.create_session()
-        users = session.query(User).filter(User.id == id,
-                                           current_user.id == id).first()
-        if users:
-            users.email = users.email
-            users.hashed_password = users.hashed_password
-            users.surname = users.surname
-            users.name = users.name
-            users.age = users.age
-            users.gender = users.gender
-            users.vk_url = users.vk_url
-            users.data_reg = users.data_reg
+        user = session.query(User).filter(User.id == id,
+                                          current_user.id == id).first()
+        if user:
+            user.email = user.email
+            user.hashed_password = user.hashed_password
+            user.surname = user.surname
+            user.name = user.name
+            user.age = user.age
+            user.gender = user.gender
+            user.vk_url = user.vk_url
+            user.data_reg = user.data_reg
         else:
             abort(404)
     if form.validate_on_submit():
         session = db_session.create_session()
-        users = session.query(User).filter(User.id == id, current_user.id == id).first()
-        if users:
-            users.surname = form.Surname.data
-            users.name = form.Name.data
-            users.age = form.Age.data
-            users.gender = form.Gender.data
-            users.vk_url = form.Vk_url.data
+        user = session.query(User).filter(User.id == id, current_user.id == id).first()
+        if user:
+            user.surname = form.Surname.data
+            user.name = form.Name.data
+            user.age = form.Age.data
+            user.gender = form.Gender.data
+            user.vk_url = form.Vk_url.data
             session.commit()
             return redirect('/my_profile')
         else:
@@ -347,9 +350,9 @@ def edit_user(id):
 def news_delete(id):
     change_now(f'/news_delete/{id}')
     session = db_session.create_session()
-    job = session.query(News).filter(News.id == id, current_user.id == 1).first()
-    if job:
-        session.delete(job)
+    news = session.query(News).filter(News.id == id, current_user.id == 1).first()
+    if news:
+        session.delete(news)
         session.commit()
     else:
         abort(404)

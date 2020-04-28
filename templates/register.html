@@ -70,6 +70,9 @@
         {% endfor %}
         </p>
         <p> {{ form.Gender.label }}{{form.Gender}}</p>
+        <div style="  display: flex;
+  justify-content: center;">{{ form.recaptcha }}</div>
+        </p>
         <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
         {{message}}
     </form>
