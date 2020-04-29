@@ -24,7 +24,19 @@
         </p>
         {% endfor %}
         </p>
+        <p>
+            {{ form.Url.label }}<br>
+            {{ form.Url(class="form-control") }}<br>
+            {% for error in form.Url.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+        {% endfor %}
+        </p>
         <p> {{form.photo}}</p>
+        <div style="  display: flex;
+  justify-content: center;">{{ form.recaptcha }}
+        </div>
         <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
         {{message}}
     </form>

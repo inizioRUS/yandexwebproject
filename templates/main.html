@@ -20,38 +20,69 @@
             </div>
             {% endif %}
             {% for user in range(user_list|length) %}
-            {% if user % 2 == 0 %}
-            <div class="col-lg-6 col-lg-offset-0">
-                <div class="tilt">
-                    <h2>{{user_list[user].name_bot}}</h2>
-                    <img src="static\img\inews_tmp\img{{user_list[user].id}}.png" alt="" ,
-                         height="400" , width="200">
-                </div>
-                {% if current_user.is_authenticated and current_user.id == 1%}
+            {% if user % 2 != 0 %}
+            <div style="  display: flex;
+  justify-content: space-evenly;">
                 <div>
-                    <a href="/news/{{ user_list[user].id }}" class="btn btn-warning">{{data[lang]['change']}}</a>
-                    <a href="/news_delete/{{ user_list[user].id }}"
-                       class="btn btn-danger">{{data[lang]['delete']}}</a>
+                    <div class="tilt">
+                        <h2>{{user_list[user - 1].name_bot}}</h2>
+                        <a href="{{user_list[user - 1].url}}"><img
+                                src="static\img\inews_tmp\{{user_list[user - 1].foto_id}}.jpg" alt="" ,
+                                height="400" , width="200"></a>
+                    </div>
+                    {% if current_user.is_authenticated and current_user.id == 1%}
+                    <a style="margin-top:15px;"
+                       href="/reviews_add_one/{{ user_list[user - 1].id }}"
+                       class="btn btn-info">{{data[lang]['add_review']}}</a>
+                    <div>
+                        <a href="/news/{{ user_list[user - 1].id }}" class="btn btn-warning">{{data[lang]['change']}}</a>
+                        <a href="/news_delete/{{ user_list[user - 1].id }}"
+                           class="btn btn-danger">{{data[lang]['delete']}}</a>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
+                <div>
+                    <div class="tilt">
+                        <h2>{{user_list[user].name_bot}}</h2>
+                        <a href="{{user_list[user].url}}"><img
+                                src="static\img\inews_tmp\{{user_list[user].foto_id}}.jpg"
+                                alt="" ,
+                                height="400" , width="200"></a>
+                    </div>
+                    {% if current_user.is_authenticated and current_user.id == 1%}
+                    <a style="margin-top:15px;" href="/reviews_add_one/{{ user_list[user].id }}"
+                       class="btn btn-info">{{data[lang]['add_review']}}</a>
+                    <div>
+                        <a href="/news/{{ user_list[user].id }}" class="btn btn-warning">{{data[lang]['change']}}</a>
+                        <a href="/news_delete/{{ user_list[user].id }}"
+                           class="btn btn-danger">{{data[lang]['delete']}}</a>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
-            {% else %}
-            <div class="col-lg-0 col-lg-offset-4">
+            {% endif %}
+            {% endfor %}
+            {% if user_list|length % 2 != 0 %}
+            <div>
                 <div class="tilt">
-                    <h2>{{user_list[user].name_bot}}</h2>
-                    <img src="static\img\inews_tmp\img{{user_list[user].id}}.png" alt="" ,
-                         height="400" , width="200">
+                    <h2>{{user_list[user_list|length - 1].name_bot}}</h2>
+                    <a href="{{user_list[user_list|length - 1].url}}"><img
+                            src="static\img\inews_tmp\{{user_list[user_list|length - 1].foto_id}}.jpg"
+                            alt="" ,
+                            height="400" , width="200"></a>
                 </div>
                 {% if current_user.is_authenticated and current_user.id == 1%}
+                <a style="margin-top:15px;"
+                   href="/reviews_add_one/{{ user_list[user_list|length - 1].id }}"
+                   class="btn btn-info">{{data[lang]['add_review']}}</a>
                 <div>
-                    <a href="/news/{{ user_list[user].id }}" class="btn btn-warning">{{data[lang]['change']}}</a>
-                    <a href="/news_delete/{{ user_list[user].id }}"
+                    <a href="/news/{{ user_list[user_list|length - 1].id }}" class="btn btn-warning">{{data[lang]['change']}}</a>
+                    <a href="/news_delete/{{ user_list[user_list|length - 1].id }}"
                        class="btn btn-danger">{{data[lang]['delete']}}</a>
                 </div>
                 {% endif %}
             </div>
             {% endif %}
-            {% endfor %}
         </div>
     </div>
 </div>

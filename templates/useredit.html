@@ -2,10 +2,20 @@
 {% block content %}
 <div class="reg">
     <form action="" method="post" class="login"
-          style="padding-top:10%;padding-bottom:10% ; background: #e0e0e0;    text-align: center;">
+          style="padding-top:10%;padding-bottom:10% ; background: #e0e0e0;    text-align: center;"
+          enctype="multipart/form-data">
         <h1>{{data[lang]['reg']}}</h1>
         {{ form.hidden_tag() }}
         {{ form.csrf_token }}
+        <p>
+            {{ form.Login.label }}<br>
+            {{ form.Login(class="form-control") }}<br>
+            {% for error in form.Login.errors %}
+        <p class="alert alert-danger" role="alert">
+            {{ error }}
+        </p>
+        {% endfor %}
+        </p>
         <p>
             {{ form.Surname.label }}<br>
             {{ form.Surname(class="form-control") }}<br>
@@ -25,24 +35,19 @@
         {% endfor %}
         </p>
         <p>
-            {{ form.Age.label }}<br>
-            {{ form.Age(class="form-control") }}<br>
-            {% for error in form.Age.errors %}
-        <p class="alert alert-danger" role="alert">
-            {{ error }}
-        </p>
-        {% endfor %}
-        </p>
-        <p>
-            {{ form.Vk_url.label }}<br>
-            {{ form.Vk_url(class="form-control") }}<br>
-            {% for error in form.Vk_url.errors %}
+            {{ form.Contact.label }}<br>
+            {{ form.Contact(class="form-control") }}<br>
+            {% for error in form.Contact.errors %}
         <p class="alert alert-danger" role="alert">
             {{ error }}
         </p>
         {% endfor %}
         </p>
         <p> {{ form.Gender.label }}{{form.Gender}}</p>
+        <p> {{form.photo}}</p>
+        <div style="  display: flex;
+  justify-content: center;">{{ form.recaptcha }}
+        </div>
         <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
         {{message}}
     </form>

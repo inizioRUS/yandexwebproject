@@ -19,43 +19,26 @@
 {% for review in range(reviews_data|length) %}
 {% if review % 2 == 0 %}
 <div style="background: #e0e0e0;">
-    <h2 style="word-wrap: break-word;">{{data[lang]['user']}}{{reviews_data[review].user.name}}
-        {{reviews_data[review].user.surname}}</h2>
-    <h2 style="word-wrap: break-word;">
-        {{data[lang]['name_bot']}}{{reviews_data[review].name_bot}}</h2>
-    <h2 style="word-wrap: break-word;">
-        {{data[lang]['review_text']}}{{reviews_data[review].text}}</h2>
-</div>
-<div>
-    {% if current_user.is_authenticated and current_user.id == 1%}
-    <div>
-        <a href="/reviews/{{ reviews_data[review].id }}"
-           class="btn btn-warning">{{data[lang]['change']}}</a>
-        <a href="/reviews_delete/{{ reviews_data[review].id }}"
-           class="btn btn-danger">{{data[lang]['delete']}}</a>
+    {% else %}
+    <div style="background: #ffffff;">
+        {% endif %}
+        <img src="/static/img/tmp/{{reviews_data[review].user.id_foto}}.jpg" , height="125" ,
+             width="125" , style="float:left;">
+        <h2 style="word-wrap: break-word;">{{data[lang]['user']}}
+            {{reviews_data[review].user.login}}</h2>
+        <h2 style="word-wrap: break-word; padding-top:20px;">
+            {{data[lang]['name_bot']}}{{reviews_data[review].name_bot}}</h2>
+        <h2 style="word-wrap: break-word;">
+            {{data[lang]['review_text']}}{{reviews_data[review].text}}</h2>
+        {% if current_user.is_authenticated and (current_user.id == 1 or curreny_user.id ==
+        reviews_data[review].user.id) %}
+        <div>
+            <a href="/reviews/{{ reviews_data[review].id }}"
+               class="btn btn-warning">{{data[lang]['change']}}</a>
+            <a href="/reviews_delete/{{ reviews_data[review].id }}"
+               class="btn btn-danger">{{data[lang]['delete']}}</a>
+        </div>
+        {% endif %}
     </div>
-    {% endif %}
-</div>
-{% else %}
-<div style="background: #ffffff;">
-    <h2 style="word-wrap: break-word;">{{data[lang]['user']}}{{reviews_data[review].user.name}}
-        {{reviews_data[review].user.surname}}</h2>
-    <h2 style="word-wrap: break-word;">
-        {{data[lang]['name_bot']}}{{reviews_data[review].name_bot}}</h2>
-    <h2 style="word-wrap: break-word;">
-        {{data[lang]['review_text']}}{{reviews_data[review].text}}</h2>
-
-</div>
-<div>
-    {% if current_user.is_authenticated and current_user.id == 1%}
-    <div>
-        <a href="/reviews/{{reviews_data[review].id  }}"
-           class="btn btn-warning">{{data[lang]['change']}}</a>
-        <a href="/reviews_delete/{{ reviews_data[review].id  }}"
-           class="btn btn-danger">{{data[lang]['delete']}}</a>
-    </div>
-    {% endif %}
-</div>
-{% endif %}
-{% endfor %}
-{% endblock %}
+    {% endfor %}
+    {% endblock %}
