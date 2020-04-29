@@ -1,9 +1,7 @@
-import datetime
 import sqlalchemy
 from flask_login import UserMixin
 from sqlalchemy import orm
 from sqlalchemy_serializer import SerializerMixin
-from werkzeug.security import generate_password_hash, check_password_hash
 from .db_session import SqlAlchemyBase
 
 
@@ -19,4 +17,6 @@ class News(SqlAlchemyBase, UserMixin, SerializerMixin):
     genre = orm.relation("Genre",
                          secondary="association",
                          backref="News")
+    url = sqlalchemy.Column(sqlalchemy.String)
+    foto_id = sqlalchemy.Column(sqlalchemy.String)
     user = orm.relation('User')
