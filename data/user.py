@@ -12,14 +12,17 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
 
     id = sqlalchemy.Column(sqlalchemy.Integer,
                            primary_key=True, autoincrement=True)
+    login = sqlalchemy.Column(sqlalchemy.String)
     email = sqlalchemy.Column(sqlalchemy.String, unique=True)
     surname = sqlalchemy.Column(sqlalchemy.String)
     name = sqlalchemy.Column(sqlalchemy.String)
-    age = sqlalchemy.Column(sqlalchemy.Integer)
     gender = sqlalchemy.Column(sqlalchemy.String)
     hashed_password = sqlalchemy.Column(sqlalchemy.String)
-    vk_url = sqlalchemy.Column(sqlalchemy.String)
+    contact = sqlalchemy.Column(sqlalchemy.String)
+    image = sqlalchemy.Column(sqlalchemy.BLOB)
     data_reg = sqlalchemy.Column(sqlalchemy.DateTime)
+    id_foto = sqlalchemy.Column(sqlalchemy.String)
+    lang = sqlalchemy.Column(sqlalchemy.String)
     newss = orm.relation("News", back_populates='user')
     reviewss = orm.relation("Reviwes", back_populates='user')
 

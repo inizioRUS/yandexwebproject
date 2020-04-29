@@ -17,4 +17,6 @@ class News(SqlAlchemyBase, UserMixin, SerializerMixin):
     genre = orm.relation("Genre",
                          secondary="association",
                          backref="News")
+    url = sqlalchemy.Column(sqlalchemy.String)
+    foto_id = sqlalchemy.Column(sqlalchemy.String)
     user = orm.relation('User')
