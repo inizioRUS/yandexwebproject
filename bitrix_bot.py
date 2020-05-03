@@ -3,12 +3,23 @@ from bitrix24 import *
 import redis
 import vk_api
 import logging
-
+import requests
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 
-from config import TOKEN, GROUP_ID
+from config import *
 
+WAY = 'UF_CRM_1588349613887'
+COLLABORATORS_LIST = [9, 11]
+PRODUCT_DICT = {'вконтакте': {"PRODUCT_ID": 9, "PRICE": 4000},
+                'telegram': {"PRODUCT_ID": 7, "PRICE": 5000.00},
+                'other.platform': {"PRODUCT_ID": 15, "PRICE": 4500.00},
+                'чат-бот': {"PRODUCT_ID": 1, "PRICE": 1000},
+                'бот-автоответчик': {"PRODUCT_ID": 3, "PRICE": 500},
+                "бот-игра": {"PRODUCT_ID": 5, "PRICE": 2000},
+                'other.bot': {"PRODUCT_ID": 17, "PRICE": 1200},
+                'сообщество': {"PRODUCT_ID": 13, "PRICE": 300},
+                'страница': {"PRODUCT_ID": 11, "PRICE": 100}}
 logging.basicConfig(level=logging.INFO)
 
 
@@ -37,12 +48,15 @@ def create_keyboard(buttons=[], inline=False, one_time=False, d=3, ask=True):
 
 
 class BitrixBot():
-    def __init__(self, vk, client, id, tok):
+    def __init__(self, vk, client, id):
         self.vk = vk
-        self.btx = Bitrix24(f'https://b24-llmh5i.bitrix24.ru/rest/1/{tok}')
+        self.btx = Bitrix24(
+            f'https://{DOMAIN}.bitrix24.ru/rest/1/{TOKEN_BITRIX}')
         self.client = client
         self.user_id = id
-        self.FUNCTION_DICT = {'start': self.start, 'category': self.category,
+        self.FUNCTION_DICT = {'start': self.start,
+                              'platform': self.platform,
+                              'category': self.category,
                               'char_1': self.char_1, 'accept': self.accept,
                               'description': self.description,
                               'contact': self.contact, 'manager': self.manager}
@@ -58,10 +72,27 @@ class BitrixBot():
             self.analyse_text(text)
 
     def analyse_text(self, text):
+        try:
+            ask_method = self.client.hget(self.user_id, 'ask').decode('utf-8')
+        except:
+            ask_method = 'false'
         if text == 'начать':
             self.client.hset(self.user_id, "now", 'start')
             keyboard = create_keyboard(
                 buttons=[['Хочу бота', VkKeyboardColor.POSITIVE]])
+
+            response = self.vk.users.get(user_id=self.user_id)[0]
+
+            id = self.btx.callMethod("crm.contact.add",
+                                     fields={'TYPE_ID': 'CLIENT',
+                                             'NAME': response['first_name'],
+                                             'LAST_NAME': response[
+                                                 'last_name'],
+                                             "IM": [{"VALUE": 'id' + str(
+                                                 response['id']),
+                                                     'VALUE_TYPE': 'VK'}],
+                                             })
+            self.client.hset(self.user_id, 'contact_id', id)
             self.vk.messages.send(user_id=self.user_id,
                                   message=f'Вас приветствует служба покупки ботов от проекта 2DYeS&#128104;&#8205;&#128187;',
                                   random_id=random.randint(0, 2 ** 64))
@@ -70,8 +101,8 @@ class BitrixBot():
                                   random_id=random.randint(0, 2 ** 64),
                                   keyboard=keyboard)
 
-        elif text == 'задать вопрос':
-            self.ask()
+        elif text == 'задать вопрос' or ask_method == 'true':
+            self.ask(ask_method=ask_method)
         else:
             try:
                 state = self.client.hget(self.user_id, "now").decode('utf-8')
@@ -79,25 +110,73 @@ class BitrixBot():
                 state = 'start'
                 self.client.hset(self.user_id, "now", 'start')
             logging.info(state)
-            self.FUNCTION_DICT[state.split('-')[0]](text)
+            self.FUNCTION_DICT[state](text)
 
-    def ask(self):
-        pass
+    def ask(self, ask_method='false'):
+        if ask_method == 'false':
+            self.client.hset(self.user_id, 'ask', 'true')
+            self.vk.messages.send(user_id=self.user_id,
+                                  message='Опишите вашу проблему в одно сообщение',
+                                  random_id=random.randint(0, 2 ** 64))
+        else:
+            self.client.hset(self.user_id, 'ask', 'false')
+            id = self.client.hget(self.user_id, 'id').decode('utf-8')
+            deal = self.btx.callMethod('crm.deal.get', ID=id)
+            self.btx.callMethod('im.notify', to=deal['ASSIGNED_BY_ID'],
+                                message=f'Есть вопрос по {"№".join(deal["TITLE"].split("#"))}',
+                                type='SYSTEM')
+            self.vk.messages.send(user_id=self.user_id,
+                                  message='Дождитесь менеджера...',
+                                  random_id=random.randint(0, 2 ** 64))
 
     def start(self, text):
         if text == 'хочу бота':
-            self.client.hset(self.user_id, 'now', "category")
+            contact_id = self.client.hget(self.user_id, 'contact_id').decode(
+                'utf-8')
+            i_collaborators = int(self.client.get('i_collaborators').decode(
+                'utf-8'))
+            self.client.set('i_collaborators', i_collaborators + 1)
+            id = self.btx.callMethod("crm.deal.add",
+                                     fields={'CONTACT_ID': contact_id,
+                                             'ASSIGNED_BY_ID':
+                                                 COLLABORATORS_LIST[
+                                                     i_collaborators % len(
+                                                         COLLABORATORS_LIST)]})
+            self.client.hset(self.user_id, 'id', id)
+            self.client.hset(self.user_id, 'now', "platform")
             keyboard = create_keyboard(
-                buttons=[['Чат-бот', VkKeyboardColor.DEFAULT],
-                         ['Бот-игра', VkKeyboardColor.DEFAULT],
-                         ['Бот-автоответчик', VkKeyboardColor.DEFAULT]], d=2)
+                buttons=[['Вконтакте', VkKeyboardColor.DEFAULT],
+                         ['Telegram', VkKeyboardColor.DEFAULT]], d=2)
             self.vk.messages.send(user_id=self.user_id,
-                                  message=f'Выберите категорию бота (или укажите свою)&#128221;',
+                                  message=f'Выберите платформу бота (или укажите свою)&#128221;',
                                   random_id=random.randint(0, 2 ** 64),
                                   keyboard=keyboard)
 
+    def platform(self, text):
+        if text not in ['вконтакте', 'telegram']:
+            text = 'other.platform'
+        self.client.hset(self.user_id, 'products', text)
+        id = self.client.hget(self.user_id, 'id').decode(
+            'utf-8')
+        self.set_products(id)
+        self.client.hset(self.user_id, 'now', "category")
+        keyboard = create_keyboard(
+            buttons=[['Чат-бот', VkKeyboardColor.DEFAULT],
+                     ['Бот-игра', VkKeyboardColor.DEFAULT],
+                     ['Бот-автоответчик', VkKeyboardColor.DEFAULT]], d=2)
+        self.vk.messages.send(user_id=self.user_id,
+                              message=f'Выберите категорию бота (или укажите свою)&#128221;',
+                              random_id=random.randint(0, 2 ** 64),
+                              keyboard=keyboard)
+
     def category(self, text):
-        self.client.hset(self.user_id, "category", text)
+        if text not in []:
+            text = 'other.bot'
+        self.client.hset(self.user_id, 'products',
+                         self.client.hget(self.user_id, 'products').decode(
+                             'utf-8') + '_' + text)
+        id = self.client.hget(self.user_id, 'id').decode('utf-8')
+        self.set_products(id)
         self.client.hset(self.user_id, "now", 'char_1')
         keyboard = create_keyboard()
         self.vk.messages.send(user_id=self.user_id,
@@ -105,35 +184,53 @@ class BitrixBot():
                               random_id=random.randint(0, 2 ** 64),
                               keyboard=keyboard)
         keyboard = create_keyboard(
-            buttons=[['Организация', VkKeyboardColor.PRIMARY],
-                     ['Индивидуально', VkKeyboardColor.PRIMARY]], d=2,
+            buttons=[['Сообщество', VkKeyboardColor.PRIMARY],
+                     ['Страница', VkKeyboardColor.PRIMARY]], d=2,
             ask=False, inline=True)
         self.vk.messages.send(user_id=self.user_id,
-                              message=f'Для кого?',
+                              message=f'К чему подключено?',
                               random_id=random.randint(0, 2 ** 64),
                               keyboard=keyboard)
 
     def char_1(self, text):
-        if text in ['организация', 'индивидуально']:
+        if text in ['сообщество', 'страница']:
             self.client.hset(self.user_id, "char_1", text)
             self.client.hset(self.user_id, "now", "accept")
+            self.client.hset(self.user_id, 'products',
+                             self.client.hget(self.user_id, 'products').decode(
+                                 'utf-8') + '_' + text)
+            id = self.client.hget(self.user_id, 'id').decode('utf-8')
+            self.set_products(id)
+            self.btx.callMethod("crm.deal.update", ID=id,
+                                fields={'STAGE_ID': 'PREPARATION'})
+            cost = int(self.btx.callMethod('crm.deal.get', ID=id)[
+                           'OPPORTUNITY'].split('.')[0])
             keyboard = create_keyboard(
                 buttons=[['Я согласен с условиями', VkKeyboardColor.POSITIVE],
                          ['Отменить заказ', VkKeyboardColor.NEGATIVE]], d=1,
                 ask=False)
             self.vk.messages.send(user_id=self.user_id,
-                                  message=f'Предварительная стоимость составляет ...\nПредоплата ...%\nВы согласны с условиями?',
+                                  message=f'Предварительная стоимость составляет {cost}\nПредоплата {cost * 0.3}\nВы согласны с условиями?',
                                   random_id=random.randint(0, 2 ** 64),
                                   keyboard=keyboard)
 
     def accept(self, text):
         if text.startswith('я согласен'):
             self.client.hset(self.user_id, "now", "description")
+            id = self.client.hget(self.user_id, 'id').decode('utf-8')
+            self.btx.callMethod("crm.deal.update", ID=id,
+                                fields={'STAGE_ID': 'PREPAYMENT_INVOICE'})
+            keyboard = create_keyboard(
+                buttons=[['Продолжить', VkKeyboardColor.PRIMARY]])
             self.vk.messages.send(user_id=self.user_id,
-                                  message='Кратко опишите вашу идею и  отправьте сообщение',
-                                  random_id=random.randint(0, 2 ** 64))
+                                  message='Кратко опишите вашу идею и нажмите "Продолжить"',
+                                  random_id=random.randint(0, 2 ** 64),
+                                  keyboard=keyboard)
         elif text.startswith('отменить'):
             self.client.hset(self.user_id, "now", 'start')
+            id = self.client.hget(self.user_id, 'id').decode('utf-8')
+            self.btx.callMethod("crm.deal.update", ID=id,
+                                fields={'STAGE_ID': 'LOSE'})
             keyboard = create_keyboard(
                 buttons=[['Хочу бота', VkKeyboardColor.POSITIVE]])
             self.vk.messages.send(user_id=self.user_id,
@@ -145,75 +242,111 @@ class BitrixBot():
                                   keyboard=keyboard)
 
     def description(self, text):
-        self.client.hset(self.user_id, "comment", text)
-        self.client.hset(self.user_id, "now", 'contact')
-        keyboard = create_keyboard(
-            buttons=[['Вконтакте', VkKeyboardColor.DEFAULT],
-                     ['Email', VkKeyboardColor.DEFAULT],
-                     ['Номер телефона', VkKeyboardColor.DEFAULT]], d=2)
-        self.vk.messages.send(user_id=self.user_id,
-                              message=f'Как нам с вами связаться?',
-                              random_id=random.randint(0, 2 ** 64),
-                              keyboard=keyboard)
+        if text == "продолжить":
+            try:
+                comment = self.client.hget(self.user_id, 'comment').decode(
+                    'utf-8')
+                self.client.hdel(self.user_id, 'comment')
+                id = self.client.hget(self.user_id, 'id').decode('utf-8')
+                self.btx.callMethod('crm.deal.update', ID=id,
+                                    fields={'COMMENTS': comment})
+            except:
+                pass
+            self.client.hset(self.user_id, "now", 'contact')
+            keyboard = create_keyboard(
+                buttons=[['Вконтакте', VkKeyboardColor.DEFAULT],
+                         ['Email', VkKeyboardColor.DEFAULT],
+                         ['Viber', VkKeyboardColor.DEFAULT],
+                         ['Telegram', VkKeyboardColor.DEFAULT],
+                         ['Звонок на мобильный', VkKeyboardColor.DEFAULT]],
+                d=2)
+            self.vk.messages.send(user_id=self.user_id,
+                                  message=f'Как нам с вами связаться?',
+                                  random_id=random.randint(0, 2 ** 64),
+                                  keyboard=keyboard)
+        else:
+            comment = ''
+            try:
+                comment += self.client.hget(self.user_id, 'comment').decode(
+                    'utf-8')
+            except Exception:
+                pass
+            comment += '\n' + text
+            self.client.hset(self.user_id, 'comment', comment)
 
     def contact(self, text):
+        id = self.client.hget(self.user_id, 'id').decode('utf-8')
         if text.startswith('вк'):
-            self.client.hset(self.user_id, "contact", "ВК")
-            self.client.hset(self.user_id, "now", 'manager-vk')
-            return self.manager(text)
+            self.client.hset(self.user_id, "contact", "VK")
+            self.btx.callMethod("crm.deal.update", ID=id,
+                                fields={WAY: 'Вконтакте'})
+            return self.final()
         elif text == 'email':
+            self.btx.callMethod("crm.deal.update", ID=id,
+                                fields={WAY: 'email'})
+            if self.check_contact('email'):
+                return self.final()
             self.client.hset(self.user_id, "contact", "EMAIL")
-            self.client.hset(self.user_id, "now", 'manager-email')
+            self.client.hset(self.user_id, "now", 'manager')
             keyboard = create_keyboard(
                 buttons=[])
             self.vk.messages.send(user_id=self.user_id,
                                   message='Введите ваш адрес email',
                                   random_id=random.randint(0, 2 ** 64),
                                   keyboard=keyboard)
-        elif text.startswith('номер'):
-            self.client.hset(self.user_id, "contact", "НОМЕР")
-            self.client.hset(self.user_id, "now", 'manager-phone')
+        elif text.startswith('звонок') or text.startswith(
+                'viber') or text.startswith('telegram'):
+            self.btx.callMethod("crm.deal.update", ID=id,
+                                fields={WAY: text})
+            if self.check_contact('phone'):
+                return self.final()
+            self.client.hset(self.user_id, "contact", "PHONE-" + text.upper())
+            self.client.hset(self.user_id, "now", 'manager')
             keyboard = create_keyboard(
                 buttons=[])
             self.vk.messages.send(user_id=self.user_id,
                                   message='Введите ваш номер телефона',
                                   random_id=random.randint(0, 2 ** 64),
                                   keyboard=keyboard)
-        else:
-            pass
 
     def manager(self, text):
-        contact = self.client.hget(self.user_id, "now").decode('utf-8').split('-')[1]
-        if contact == 'vk':
-            self.btx.callMethod("crm.lead.add", fields={
-                "TITLE": f"Заказ {self.vk.users.get(user_id=self.user_id)[0]['first_name']}{self.vk.users.get(user_id=self.user_id)[0]['last_name']}.Категория:{self.client.hget(self.user_id, 'category').decode('utf-8')}",
-                "NAME": f"{self.vk.users.get(user_id=self.user_id)[0]['first_name']}",
-                "LAST_NAME": f"{self.vk.users.get(user_id=self.user_id)[0]['last_name']}",
-                "STATUS_ID": "NEW",
-                "OPENED": "Y",
-                "ASSIGNED_BY_ID": 1,
-                "COMMENTS": f"Категория бота: {self.client.hget(self.user_id, 'category').decode('utf-8')}, для {self.client.hget(self.user_id, 'char_1').decode('utf-8')}\n Информация от заказчика:{self.client.hget(self.user_id, 'comment').decode('utf-8')}.\n Удобно связаться через {self.client.hget(self.user_id, 'contact').decode('utf-8')}"},
-                                params={"REGISTER_SONET_EVENT": "Y"})
-        elif contact == 'email':
-            self.btx.callMethod("crm.lead.add", fields={
-                "TITLE": f"Заказ {self.vk.users.get(user_id=self.user_id)[0]['first_name']}{self.vk.users.get(user_id=self.user_id)[0]['last_name']}.Категория:{self.client.hget(self.user_id, 'category').decode('utf-8')}",
-                "NAME": f"{self.vk.users.get(user_id=self.user_id)[0]['first_name']}",
-                "LAST_NAME": f"{self.vk.users.get(user_id=self.user_id)[0]['last_name']}",
-                "STATUS_ID": "NEW",
-                "OPENED": "Y",
-                "ASSIGNED_BY_ID": 1,
-                "COMMENTS": f"Категория бота: {self.client.hget(self.user_id, 'category').decode('utf-8')}, для {self.client.hget(self.user_id, 'char_1').decode('utf-8')}\n Информация от заказчика:{self.client.hget(self.user_id, 'comment').decode('utf-8')}.\n Удобно связаться через {self.client.hget(self.user_id, 'contact').decode('utf-8')}"},
-                                params={"REGISTER_SONET_EVENT": "Y"})
-        elif contact == 'phone':
-            self.btx.callMethod("crm.lead.add", fields={
-                "TITLE": f"Заказ {self.vk.users.get(user_id=self.user_id)[0]['first_name']}{self.vk.users.get(user_id=self.user_id)[0]['last_name']}.Категория:{self.client.hget(self.user_id, 'category').decode('utf-8')}",
-                "NAME": f"{self.vk.users.get(user_id=self.user_id)[0]['first_name']}",
-                "LAST_NAME": f"{self.vk.users.get(user_id=self.user_id)[0]['last_name']}",
-                "STATUS_ID": "NEW",
-                "OPENED": "Y",
-                "ASSIGNED_BY_ID": 1,
-                "COMMENTS": f"Категория бота: {self.client.hget(self.user_id, 'category').decode('utf-8')}, для {self.client.hget(self.user_id, 'char_1').decode('utf-8')}\n Информация от заказчика:{self.client.hget(self.user_id, 'comment').decode('utf-8')}.\n Удобно связаться через {self.client.hget(self.user_id, 'contact').decode('utf-8')}"},
-                                params={"REGISTER_SONET_EVENT": "Y"})
+        contact = \
+            self.client.hget(self.user_id, "contact").decode('utf-8')
+
+        if contact.startswith('VK'):
+            pass
+        elif contact.startswith('EMAIL'):
+            contact_id = self.client.hget(self.user_id, 'contact_id').decode(
+                'utf-8')
+            self.btx.callMethod('crm.contact.update', ID=contact_id,
+                                fields={'EMAIL': [{"VALUE": text}]})
+        elif contact.startswith('PHONE'):
+            contact_id = self.client.hget(self.user_id, 'contact_id').decode(
+                'utf-8')
+            contact = contact.split('-')[1]
+            response = self.vk.users.get(user_id=self.user_id)[0]
+            if contact in ['VIBER', 'TELEGRAM']:
+                self.btx.callMethod('crm.contact.update', ID=contact_id,
+                                    fields={"IM": [{"VALUE": 'id' + str(
+                                        response['id']), 'VALUE_TYPE': 'VK'},
+                                                   {"VALUE": text,
+                                                    'VALUE_TYPE': contact}]})
+            self.btx.callMethod('crm.contact.update', ID=contact_id,
+                                fields={'PHONE': [{"VALUE": text}]})
+        self.final()
+
+    def final(self):
+        id = self.client.hget(self.user_id, 'id').decode('utf-8')
+        deal = self.btx.callMethod('crm.deal.get', ID=id)
+        self.btx.callMethod('im.notify', to=deal['ASSIGNED_BY_ID'],
+                                  message=f'Оформлена {"№".join(deal["TITLE"].split("#"))}',
+                                  type='SYSTEM')
+        self.btx.callMethod('im.notify', to=1,
+                                  type='SYSTEM',
+                                  message=f'Оформлена {"№".join(deal["TITLE"].split("#"))}'
+                                  )
+        self.btx.callMethod("crm.deal.update", ID=id,
+                            fields={'STAGE_ID': 'EXECUTING'})
         self.client.hset(self.user_id, "now", 'start')
         keyboard = create_keyboard(
             buttons=[['Хочу бота', VkKeyboardColor.POSITIVE]])
@@ -221,6 +354,23 @@ class BitrixBot():
                               message=f'В течении следующего часа с вами свяжется менеджер для оговорения стоимости и сроков сдачи.\nОжидайте...',
                               random_id=random.randint(0, 2 ** 64),
                               keyboard=keyboard)
+
+    def set_products(self, id):
+        search = f'https://{DOMAIN}.bitrix24.ru/rest/1/{TOKEN_BITRIX}/crm.deal.productrows.set/?id={id}'
+        products = self.client.hget(self.user_id, 'products').decode(
+            'utf-8').split('_')
+        for i in range(len(products)):
+            search += f'&rows[{i}][PRODUCT_ID]={PRODUCT_DICT[products[i]]["PRODUCT_ID"]}&rows[{i}][PRICE]={PRODUCT_DICT[products[i]]["PRICE"]}'
+        requests.get(search)
+
+    def check_contact(self, object):
+        contact_id = self.client.hget(self.user_id, 'contact_id').decode(
+            'utf-8')
+        response = self.btx.callMethod('crm.contact.get', ID=contact_id)
+        if object == 'phone':
+            return response['HAS_PHONE'] == 'Y'
+        elif object == 'email':
+            return response['HAS_EMAIL'] == 'Y'
 
 
 def info_about_user(id, state):
@@ -238,8 +388,7 @@ def main():
 
     for event in longpoll.listen():
         if event.type == VkBotEventType.MESSAGE_NEW:
-            pass
-            bitrix_bot = BitrixBot(vk, client, event.obj.message['from_id'], "hl76a3vhf7v1kloh")
+            bitrix_bot = BitrixBot(vk, client, event.obj.message['from_id'])
             bitrix_bot.analyse_type(event.obj.message)
 
 
