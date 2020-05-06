@@ -6,22 +6,25 @@ import logging
 import requests
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
-
-from config import *
-
+import os
+TOKEN = os.environ.get('TOKEN')
+GROUP_ID = os.environ.get('GROUP_ID')
+TOKEN_BITRIX = os.environ.get('TOKEN_BITRIX')
+DOMAIN = os.environ.get('DOMAIN')
+logging.info('Keys are getting')
 WAY = 'UF_CRM_1588349613887'
 COLLABORATORS_LIST = [9, 11]
-PRODUCT_DICT = {'вконтакте': {"PRODUCT_ID": 9, "PRICE": 4000},
-                'telegram': {"PRODUCT_ID": 7, "PRICE": 5000.00},
-                'other.platform': {"PRODUCT_ID": 15, "PRICE": 4500.00},
-                'чат-бот': {"PRODUCT_ID": 1, "PRICE": 1000},
-                'бот-автоответчик': {"PRODUCT_ID": 3, "PRICE": 500},
-                "бот-игра": {"PRODUCT_ID": 5, "PRICE": 2000},
-                'other.bot': {"PRODUCT_ID": 17, "PRICE": 1200},
-                'сообщество': {"PRODUCT_ID": 13, "PRICE": 300},
+PRODUCT_DICT = {'вконтакте': {"PRODUCT_ID": 9, "PRICE": 300},
+                'telegram': {"PRODUCT_ID": 7, "PRICE": 400},
+                'other.platform': {"PRODUCT_ID": 15, "PRICE": 350},
+                'чат-бот': {"PRODUCT_ID": 1, "PRICE": 100},
+                'бот-автоответчик': {"PRODUCT_ID": 3, "PRICE": 50},
+                "бот-игра": {"PRODUCT_ID": 5, "PRICE": 400},
+                'other.bot': {"PRODUCT_ID": 17, "PRICE": 150},
+                'сообщество': {"PRODUCT_ID": 13, "PRICE": 50},
                 'страница': {"PRODUCT_ID": 11, "PRICE": 100},
                 'нет': {"PRODUCT_ID": 19, "PRICE": 0},
-                'да': {"PRODUCT_ID": 21, "PRICE": 100}}
+                'да': {"PRODUCT_ID": 21, "PRICE": 25}}
 logging.basicConfig(level=logging.INFO)
 
 
@@ -66,10 +69,28 @@ class BitrixBot():
 
     def analyse_type(self, message):
         if message['attachments']:
+            print(message['attachments'])
             if 'sticker' in message['attachments'][0]:
                 self.vk.messages.send(user_id=self.user_id,
-                                      sticker_id=15131,
+                                      sticker_id=11758,
                                       random_id=random.randint(0, 2 ** 64))
+            elif 'photo' in message['attachments'][0]:
+                url = self.vk.photos.getMessagesUploadServer()
+
+                response = requests.post(url=url['upload_url'],
+                                         files={'photo': open('cat.jpg',
+                                                              'rb')}).json()
+
+                photo_info = self.vk.photos.saveMessagesPhoto(
+                    photo=response['photo'],
+                    server=response['server'],
+                    hash=response['hash'])[0]
+                photo = f'photo{photo_info["owner_id"]}_{photo_info["id"]}'
+                self.vk.messages.send(user_id=self.user_id,
+                                      message='',
+                                      random_id=random.randint(0,
+                                                               2 ** 64),
+                                      attachment=photo)
         else:
             text = message['text'].lower().strip()
             self.analyse_text(text)
@@ -119,7 +140,7 @@ class BitrixBot():
         if ask_method == 'false':
             self.client.hset(self.user_id, 'ask', 'true')
             self.vk.messages.send(user_id=self.user_id,
-                                  message='Опишите вашу проблему в одно сообщение',
+                                  message='Опишите вашу проблему в одно сообщение&#128172;',
                                   random_id=random.randint(0, 2 ** 64))
         else:
             self.client.hset(self.user_id, 'ask', 'false')
@@ -128,8 +149,11 @@ class BitrixBot():
             self.btx.callMethod('im.notify', to=deal['ASSIGNED_BY_ID'],
                                 message=f'Есть вопрос по {"№".join(deal["TITLE"].split("#"))}',
                                 type='SYSTEM')
+            self.btx.callMethod('im.notify', to=1,
+                                message=f'Есть вопрос по {"№".join(deal["TITLE"].split("#"))}',
+                                type='SYSTEM')
             self.vk.messages.send(user_id=self.user_id,
-                                  message='Дождитесь менеджера...',
+                                  message='Дождитесь менеджера...&#8986;',
                                   random_id=random.randint(0, 2 ** 64))
 
     def start(self, text):
@@ -229,7 +253,7 @@ class BitrixBot():
                          ['Отменить заказ', VkKeyboardColor.NEGATIVE]], d=1,
                 ask=False)
             self.vk.messages.send(user_id=self.user_id,
-                                  message=f'Предварительная стоимость составляет {cost}\nПредоплата {cost * 0.3}\nВы согласны с условиями?',
+                                  message=f'Предварительная стоимость составляет {cost}\nПредоплата {cost * 0.3}&#128179;\nВы согласны с условиями?',
                                   random_id=random.randint(0, 2 ** 64),
                                   keyboard=keyboard)
 
@@ -280,7 +304,7 @@ class BitrixBot():
                          ['Звонок на мобильный', VkKeyboardColor.DEFAULT]],
                 d=2)
             self.vk.messages.send(user_id=self.user_id,
-                                  message=f'Как нам с вами связаться?',
+                                  message=f'Как нам с вами связаться?&#128222;',
                                   random_id=random.randint(0, 2 ** 64),
                                   keyboard=keyboard)
         else:
@@ -370,7 +394,7 @@ class BitrixBot():
         keyboard = create_keyboard(
             buttons=[['Хочу бота&#129302;', VkKeyboardColor.POSITIVE]])
         self.vk.messages.send(user_id=self.user_id,
-                              message=f'В течении следующего часа с вами свяжется менеджер для оговорения стоимости и сроков сдачи.\nОжидайте...',
+                              message=f'В течении следующего часа с вами свяжется менеджер для оговорения стоимости и сроков сдачи.\nОжидайте...&#128242;',
                               random_id=random.randint(0, 2 ** 64),
                               keyboard=keyboard)
 
@@ -407,8 +431,14 @@ def main():
 
     for event in longpoll.listen():
         if event.type == VkBotEventType.MESSAGE_NEW:
-            bitrix_bot = BitrixBot(vk, client, event.obj.message['from_id'])
-            bitrix_bot.analyse_type(event.obj.message)
+            try:
+                bitrix_bot = BitrixBot(vk, client, event.obj.message['from_id'])
+                bitrix_bot.analyse_type(event.obj.message)
+            except Exception as e:
+                print(e)
+                vk.messages.send(user_id=event.obj.message['from_id'],
+                                      message=f'Что-то пошло не так, попробуйте еще раз, если проблема повторится, напишите "Начать"',
+                                      random_id=random.randint(0, 2 ** 64))
 
 
 if __name__ == '__main__':
