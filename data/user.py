@@ -23,8 +23,9 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     data_reg = sqlalchemy.Column(sqlalchemy.DateTime)
     id_foto = sqlalchemy.Column(sqlalchemy.String)
     lang = sqlalchemy.Column(sqlalchemy.String)
-    newss = orm.relation("News", back_populates='user')
-    reviewss = orm.relation("Reviwes", back_populates='user')
+    page = sqlalchemy.Column(sqlalchemy.String)
+    newss = orm.relation("News", back_populates='user', lazy='subquery')
+    reviewss = orm.relation("Reviwes", back_populates='user', lazy='subquery')
 
     def set_password(self, password):
         salt = os.urandom(32)

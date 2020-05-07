@@ -64,10 +64,22 @@ def change_lang():
         return lang
 
 
-def change_now(data):
+def page_now():
     global now_page
-    now_page = data
+    try:
+        return current_user.page
+    except Exception:
+        return now_page
 
+
+def new_page(text):
+    try:
+        session = db_session.create_session()
+        current_user.page = text
+        session.merge(current_user)
+        session.commit()
+    except Exception as e:
+        pass
 
 class RegisterForm(FlaskForm):
     Email = StringField('Email', validators=[DataRequired()])
@@ -114,26 +126,10 @@ class NewsForm(FlaskForm):
     submit = SubmitField('Sumbit')
 
 
-class Add_Reviewsform(FlaskForm):
-    session = db_session.create_session()
-    bot = SelectField('Bot', choices=[
-        *[(user.name_bot, user.name_bot) for user in session.query(News).all()]])
-    text = TextAreaField("Text")
-    recaptcha = RecaptchaField()
-    submit = SubmitField('Sumbit')
-
-
 class Add_Reviewsfor_one(FlaskForm):
     session = db_session.create_session()
     text = TextAreaField("Text")
     recaptcha = RecaptchaField()
-    submit = SubmitField('Sumbit')
-
-
-class Change_bot(FlaskForm):
-    session = db_session.create_session()
-    bot = SelectField('Bot', choices=[
-        *[(user.name_bot, user.name_bot) for user in session.query(News).all()]])
     submit = SubmitField('Sumbit')
 
 
@@ -156,7 +152,7 @@ def ruf():
     current_user.lang = "ru"
     session.merge(current_user)
     session.commit()
-    return redirect(now_page)
+    return redirect(current_user.page)
 
 
 @app.route('/en')
@@ -166,7 +162,7 @@ def enf():
     current_user.lang = "en"
     session.merge(current_user)
     session.commit()
-    return redirect(now_page)
+    return redirect(current_user.page)
 
 
 @login_manager.user_loader
@@ -177,7 +173,7 @@ def load_user(user_id):
 
 @app.route('/', methods=['GET', 'POST'])
 def main_page():
-    change_now('/')
+    new_page('/')
     session = db_session.create_session()
     all_news = session.query(News).all()
     return render_template('main.html', title="2DYES", data=translate, lang=change_lang(),
@@ -186,14 +182,14 @@ def main_page():
 
 @app.route('/about_us', methods=['GET', 'POST'])
 def about_us():
-    change_now('/about_us')
+    new_page('/about_us')
     return render_template('about_us.html', title=translate[change_lang()]['abo'], data=translate,
                            lang=change_lang())
 
 
 @app.route('/list_bot', methods=['GET', 'POST'])
 def list_bot():
-    change_now('/list_bot')
+    new_page('/list_bot')
     session = db_session.create_session()
     all_news = session.query(News).all()
     return render_template('list_bot.html', title=translate[change_lang()]['libot'], data=translate,
@@ -203,7 +199,7 @@ def list_bot():
 
 @app.route('/my_profile', methods=['GET', 'POST'])
 def my_profile():
-    change_now('/my_profile')
+    new_page('/my_profile')
     return render_template('my_profile.html', title=translate[change_lang()]['parea'],
                            data=translate,
                            lang=change_lang(),
@@ -212,7 +208,7 @@ def my_profile():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    change_now('/register')
+    new_page('/register')
     form = RegisterForm()
     if form.validate_on_submit():
         if form.Password.data != form.Password_again.data:
@@ -251,7 +247,7 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    change_now('/login')
+    new_page('/login')
     form = LoginForm()
     if form.validate_on_submit():
         session = db_session.create_session()
@@ -270,7 +266,7 @@ def login():
 @app.route('/news', methods=['GET', 'POST'])
 @login_required
 def add_news():
-    change_now('/news')
+    new_page('/news')
     form = NewsForm()
     if form.validate_on_submit():
         session = db_session.create_session()
@@ -296,7 +292,7 @@ def add_news():
 @app.route('/news/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_news(id):
-    change_now(f'/news/{id}')
+    new_page(f'/news/{id}')
     form = NewsForm()
     if request.method == "GET":
         session = db_session.create_session()
@@ -336,7 +332,7 @@ def edit_news(id):
 @app.route('/user/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_user(id):
-    change_now(f'/user/{id}')
+    new_page(f'/user/{id}')
     form = EditForm()
     if request.method == "GET":
         session = db_session.create_session()
@@ -382,7 +378,7 @@ def edit_user(id):
 @app.route('/news_delete/<int:id>', methods=['GET', 'POST'])
 @login_required
 def news_delete(id):
-    change_now(f'/news_delete/{id}')
+    new_page(f'/news_delete/{id}')
     session = db_session.create_session()
     news = session.query(News).filter(News.id == id, current_user.id == 1).first()
     if news:
@@ -396,7 +392,13 @@ def news_delete(id):
 @app.route('/reviews', methods=['GET', 'POST'])
 @login_required
 def reviewsf():
-    change_now('/reviews')
+    class Change_bot(FlaskForm):
+        session = db_session.create_session()
+        bot = SelectField('Bot', choices=[
+            *[(user.name_bot, user.name_bot) for user in session.query(News).all()]])
+        submit = SubmitField('Sumbit')
+
+    new_page('/reviews')
     form = Change_bot()
     session = db_session.create_session()
     reviews_data = session.query(Reviwes).all()
@@ -413,10 +415,19 @@ def reviewsf():
 @app.route('/reviews_add', methods=['GET', 'POST'])
 @login_required
 def reviews_addf():
-    change_now('/reviews_add')
+    class Add_Reviewsform(FlaskForm):
+        session = db_session.create_session()
+        bot = SelectField('Bot', choices=[
+            *[(user.name_bot, user.name_bot) for user in session.query(News).all()]])
+        text = TextAreaField("Text")
+        recaptcha = RecaptchaField()
+        submit = SubmitField('Sumbit')
+        session.close()
+
+    new_page('/reviews_add')
+    session = db_session.create_session()
     form = Add_Reviewsform()
     if form.validate_on_submit():
-        session = db_session.create_session()
         riew = Reviwes()
         riew.text = form.text.data
         riew.name_bot = form.bot.data
@@ -431,7 +442,7 @@ def reviews_addf():
 @app.route('/reviews_delete/<int:id>', methods=['GET', 'POST'])
 @login_required
 def reviews_delete(id):
-    change_now(f'/reviews_delete/{id}')
+    new_page(f'/reviews_delete/{id}')
     session = db_session.create_session()
     reviewss = session.query(Reviwes).filter(Reviwes.id == id,
                                              current_user.id == 1).first()
@@ -446,11 +457,11 @@ def reviews_delete(id):
 @app.route('/reviews/<int:id>', methods=['GET', 'POST'])
 @login_required
 def edit_use(id):
-    change_now(f'/reviews/{id}')
+    new_page(f'/reviews/{id}')
     form = Change_Reviewsform()
     if request.method == "GET":
         session = db_session.create_session()
-        reviewss = session.query(Reviwes).filter(Reviwes.id == id ,
+        reviewss = session.query(Reviwes).filter(Reviwes.id == id,
                                                  current_user.id == 1).first()
         if reviewss:
             reviewss.id = reviewss.id
@@ -478,10 +489,10 @@ def edit_use(id):
 @app.route('/reviews_add_one/<int:id>', methods=['GET', 'POST'])
 @login_required
 def reviews_add_for_onef(id):
-    change_now(f'/reviews_add_one/{id}')
+    new_page(f'/reviews_add_one/{id}')
+    session = db_session.create_session()
     form = Add_Reviewsfor_one()
     if form.validate_on_submit():
-        session = db_session.create_session()
         riew = Reviwes()
         riew.text = form.text.data
         riew.name_bot = session.query(News).filter(News.id == id).first().name_bot
@@ -489,7 +500,7 @@ def reviews_add_for_onef(id):
         session.merge(current_user)
         session.commit()
         return redirect('/reviews')
-    return render_template('add_reviews_for_one.html', title=translate[change_lang()]['add_review'],
+    return render_template('reviews_add_one.html', title=translate[change_lang()]['add_review'],
                            form=form, data=translate, lang=change_lang())
 
 
@@ -500,4 +511,4 @@ api.add_resource(NewsResource, '/api/news/<int:news_id>')
 api.add_resource(ReviewListResource, '/api/review')
 api.add_resource(ReviewResource, '/api/review/<int:rew_id>')
 if __name__ == '__main__':
-    app.run(port=8080, host='127.0.0.1')
+    app.run(port=8080, threaded=True)

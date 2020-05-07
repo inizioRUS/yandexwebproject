@@ -12,7 +12,7 @@
             <h2 class="example">{{data[lang]['data']}} {{current_user.data_reg}}</h2>
             <h2 class="example">{{data[lang]['cont']}} {{current_user.contact}}</h2>
         </div>
-        {% if current_user.is_authenticated and current_user.id == 1%}
+        {% if current_user.is_authenticated%}
         <div>
             <a href="/user/{{ current_user.id }}"
                class="btn btn-warning">{{data[lang]['change']}}</a>

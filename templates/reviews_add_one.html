@@ -1,0 +1,16 @@
+{% extends "wrapper.html" %}
+{% block content %}
+<div class="reg">
+    <form action="" method="post" class="login"
+          style="padding-top:10%;padding-bottom:10% ; background: #e0e0e0;    text-align: center;">
+        <h1>{{data[lang]['add_review']}}</h1>
+        {{ form.hidden_tag() }}
+        {{ form.csrf_token }}
+        <p> {{ form.text.label }}{{form.text}}</p>
+        <div style="  display: flex;
+  justify-content: center;">{{ form.recaptcha }}
+        </div>
+        <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+    </form>
+</div>
+{% endblock %}

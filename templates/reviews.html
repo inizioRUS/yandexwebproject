@@ -30,8 +30,7 @@
             {{data[lang]['name_bot']}}{{reviews_data[review].name_bot}}</h2>
         <h2 style="word-wrap: break-word;">
             {{data[lang]['review_text']}}{{reviews_data[review].text}}</h2>
-        {% if current_user.is_authenticated and (current_user.id == 1 or curreny_user.id ==
-        reviews_data[review].user.id) %}
+        {% if current_user.is_authenticated and (current_user.id == 1 or current_user.id == reviews_data[review].user.id) %}
         <div>
             <a href="/reviews/{{ reviews_data[review].id }}"
                class="btn btn-warning">{{data[lang]['change']}}</a>
