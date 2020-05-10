@@ -1,7 +1,10 @@
 import requests
-print(requests.get("https://twodyesbots.herokuapp.com/api/user").json())
-print(requests.get("https://twodyesbots.herokuapp.com/api/user/1").json())
-print(requests.get("https://twodyesbots.herokuapp.com/api/news").json())
-print(requests.get("https://twodyesbots.herokuapp.com/api/news/1").json())
-print(requests.get("https://twodyesbots.herokuapp.com/api/review").json())
-print(requests.get("https://twodyesbots.herokuapp.com/api/review/1").json())
+import urllib3
+
+urllib3.disable_warnings()
+print(requests.get("https://79.143.30.45/api/user", verify=False).json())
+print(requests.get("https://79.143.30.45/api/user/1", verify=False).json())
+print(requests.get("https://79.143.30.45/api/news", verify=False).json())
+print(requests.get("https://79.143.30.45/api/news/1", verify=False).json())
+print(requests.get("https://79.143.30.45/api/review", verify=False).json())
+print(requests.get("https://79.143.30.45/api/review/1", verify=False).json())

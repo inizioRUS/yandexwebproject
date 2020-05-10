@@ -105,9 +105,9 @@ class LoginForm(FlaskForm):
 
 
 class EditForm(FlaskForm):
-    Surname = StringField('Login', validators=[DataRequired()])
+    Surname = StringField('Surname', validators=[DataRequired()])
     Name = StringField('Name', validators=[DataRequired()])
-    Login = StringField('Surname', validators=[DataRequired()])
+    Login = StringField('Login', validators=[DataRequired()])
     Contact = StringField('Contact', validators=[DataRequired()])
     Gender = RadioField('Gender', choices=[
         ("Female", 'Female'), ('Male', 'Male')],
@@ -239,7 +239,7 @@ def register():
         user.set_password(form.Password.data)
         session.add(user)
         session.commit()
-        return redirect("/")
+        return redirect("/login")
     return render_template('register.html', title=translate[change_lang()]['reg'], form=form,
                            data=translate,
                            lang=change_lang())
