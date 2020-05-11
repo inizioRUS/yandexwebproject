@@ -27,9 +27,7 @@
                     <div class="tilt">
                         <h2>{{user_list[user - 1].name_bot}}</h2>
                         <a href="{{user_list[user - 1].url}}"><img
-                                src="static\img\inews_tmp\{{user_list[user - 1].foto_id}}.jpg" alt=""
-                                ,
-                                height="400" , width="200"></a>
+                                src="static\img\inews_tmp\{{user_list[user - 1].foto_id}}.jpg" alt=""></a>
                     </div>
                     {% if current_user.is_authenticated%}
                     <a style="margin-top:15px;"
@@ -49,8 +47,7 @@
                         <h2>{{user_list[user].name_bot}}</h2>
                         <a href="{{user_list[user].url}}"><img
                                 src="static\img\inews_tmp\{{user_list[user].foto_id}}.jpg"
-                                alt="" ,
-                                height="400" , width="200"></a>
+                                alt="" ></a>
                     </div>
                     {% if current_user.is_authenticated%}
                     <a style="margin-top:15px;" href="/reviews_add_one/{{ user_list[user].id }}"
@@ -73,8 +70,7 @@
                     <h2>{{user_list[user_list|length - 1].name_bot}}</h2>
                     <a href="{{user_list[user_list|length - 1].url}}"><img
                             src="static\img\inews_tmp\{{user_list[user_list|length - 1].foto_id}}.jpg"
-                            alt="" ,
-                            height="400" , width="200"></a>
+                            alt=""></a>
                 </div>
                 {% if current_user.is_authenticated %}
                 <a style="margin-top:15px;"

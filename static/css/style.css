@@ -51,13 +51,9 @@ body{
 #dg h4 {
   font-size: 40px;
 }
-.tilt {
-  transition: all 1s ease;
-}
 
-.tilt:hover {
-  transform: rotate(-10deg);
-}
+
+
 .last{
   background: #2d2d2d;
 }
@@ -74,20 +70,21 @@ body{
     margin-right:5%;
 }
 @media screen and (min-width: 601px) {
-.example {
-    font-size: 30px;
-  }
-}
-
-@media screen and (max-width: 600px) {
-.example {
-    font-size: 20px;
-  }
-}
-@media screen and (min-width: 601px) {
 .image {
     height:20px;
     width:33px;
+  }
+
+.tilt:hover {
+   transition: all 1s ease;
+     transform: rotate(-10deg);
+}
+.tilt img{
+  height:400px;
+  width:200px;
+}
+.example {
+    font-size: 30px;
   }
 }
 
@@ -95,5 +92,16 @@ body{
 .image {
     height:10px;
     width:20px;
+  }
+.tilt:hover {
+   transition: all 1s ease;
+  transform: rotate(-10deg);
+}
+.tilt img{
+  height:200px;
+  width:100px;
+}
+.example {
+    font-size: 20px;
   }
 }
