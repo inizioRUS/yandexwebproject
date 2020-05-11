@@ -18,48 +18,38 @@ class NewsBot:
     def analyse_command(self):
         command = self.command.split()
         if len(command) == 1:
-            self.choose_news()
+            self.i = 0
+            self.client.hset(self.user_id, 'news_i', self.i)
         else:
-            pass
-            self.send_news(' '.join(command[1:]))
+            i = int(self.client.hget(self.user_id, 'news_i').decode('utf-8'))
+            if command[1] == '>':
+                i += 1
+            else:
+                i-= 1
+            i %= 5
+            self.i = i
+            self.client.hset(self.user_id, 'news_i', self.i)
+        self.send_news()
 
-    def choose_news(self):
-        keyboard = create_keyboard.create_keyboard(buttons=
-                                                   COMMAND_DICT['!новости'][
-                                                       'категории'],
-                                                   inline=False, d=2)
 
-        self.vk.messages.send(user_id=self.user_id,
-                              message=f'Выберите категорию',
-                              random_id=random.randint(0, 2 ** 64),
-                              keyboard=keyboard)
-
-    def send_news(self, search):
-        search_list = NEWS[search]
+    def send_news(self):
+        params = {
+            'country': 'ru',
+            'apiKey': API_NEWS
+        }
+        response = requests.get('http://newsapi.org/v2/top-headlines?', params=params).json()['articles']
         result = []
-        response = requests.get('https://api.lenta.ru/')
-        while '404' in str(response):
-            response = requests.get('https://api.lenta.ru/')
-        response = response.json()
-        for new in response['top7']:
-            for label in new['labels']:
-                if label['name'].lower() in search_list:
-                    result.append(f"{new['title']}&#128240;\n{new['announce']}")
-                    break
-        self.client.hdel(self.user_id, 'state')
+        for elem in response[self.i * 4: self.i * 4 + 4]:
+            result.append(elem['title'] + '\n' + elem['url'])
+        self.client.hset(self.user_id, 'state', '!новости')
         keyboard = create_keyboard.create_keyboard(
-            buttons=COMMAND_LIST,
-            inline=False, geo=True)
-        if result:
-            self.vk.messages.send(user_id=self.user_id,
+            buttons=[['>', VkKeyboardColor.PRIMARY], ['<', VkKeyboardColor.PRIMARY]],
+            inline=False)
+        self.vk.messages.send(user_id=self.user_id,
                               message='\n\n'.join(result),
                               random_id=random.randint(0,
                                                        2 ** 64),
                               keyboard=keyboard)
-        else:
-            self.vk.messages.send(user_id=self.user_id,
-                                  message='В настоящий момент актуальных новостей на эту тему нет',
-                                  random_id=random.randint(0,
-                                                           2 ** 64),
-                                  keyboard=keyboard)
+
+
 
