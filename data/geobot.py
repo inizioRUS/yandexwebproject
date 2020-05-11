@@ -40,7 +40,6 @@ class GeoBot:
 
     def wrong_geolocation(self):
         keyboard = create_keyboard.create_keyboard(inline=True, location=True)
-
         self.vk.messages.send(user_id=self.user_id,
                               message=f'Обновите геопозицию',
                               random_id=random.randint(0, 2 ** 64),
@@ -68,6 +67,7 @@ class GeoBot:
             "type": "biz"
         }
         response = requests.get(search_api_server, params=search_params)
+        print(response.json())
         json_response = response.json()
         json_response['features'] = json_response['features'][:6]
         return '\n\n'.join(
