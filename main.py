@@ -1,6 +1,7 @@
 import redis
 import vk_api
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
+import logging
 
 import requests
 
@@ -8,6 +9,8 @@ import random
 from config import *
 
 from data import mainbot
+
+logging.basicConfig(level=logging.INFO)
 
 
 def auth_handler():
@@ -27,6 +30,7 @@ def main():
     vk_session = vk_api.VkApi(
         token=TOKEN)
     longpoll = VkBotLongPoll(vk_session, GROUP_ID)
+
     print('ok')
     vk = vk_session.get_api()
     client = redis.Redis()
@@ -36,14 +40,12 @@ def main():
             print('Для меня от:', event.obj.message['from_id'])
             print('Текст:', event.obj.message['text'])
             print('----------------------------------------------------------')
-            print(event.obj.message)
+
             mainbot_ = mainbot.MainBot(vk, event.obj.message['from_id'],
                                        client)
             mainbot_.analyse_type(event.obj.message)
             print('ok')
 
-            # response = vk.users.get(user_id=event.obj.message['from_id'],
-            #                         fields="bdate, city")
 
 
 if __name__ == '__main__':
